@@ -1,0 +1,71 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.14'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.wondealer'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// ── Spring Boot 기본 ──────────────────────────────────────────
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'  // @Valid, @NotBlank 등
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'   // WebSocket STOMP
+
+	// ── Lombok ───────────────────────────────────────────────────
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// ── DevTools ─────────────────────────────────────────────────
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// ── MySQL ────────────────────────────────────────────────────
+	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	// ── JWT ──────────────────────────────────────────────────────
+	// API(인터페이스), Impl(구현체), Jackson(JSON 파싱) 3개 세트 필수
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+	runtimeOnly  'io.jsonwebtoken:jjwt-impl:0.11.2'
+	runtimeOnly  'io.jsonwebtoken:jjwt-jackson:0.11.2'
+
+	// ── Swagger (Spring Boot 3.x 전용) ────────────────────────────
+	// http://localhost:8111/swagger-ui.html 에서 API 직접 테스트 가능
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
+
+	// ── OAuth2 (구글 소셜 로그인) ─────────────────────────────────
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+	// ── Mail (이메일 인증 · 임시 비밀번호 발송) ───────────────────
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// ── Jsoup (게임메카 크롤링) ───────────────────────────────────
+	implementation 'org.jsoup:jsoup:1.17.2'
+
+	// ── AWS S3 (상품 이미지 업로드) ───────────────────────────────
+	// Spring Cloud AWS 3.x — Spring Boot 3.x 전용 공식 통합 라이브러리
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1'
+
+	// ── Test ─────────────────────────────────────────────────────
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
