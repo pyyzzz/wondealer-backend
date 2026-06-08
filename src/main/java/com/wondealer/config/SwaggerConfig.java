@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Swagger UI 설정
- * 접속: http://localhost:8111/swagger-ui.html
+ * 접속: http://localhost:8111/swagger-ui/index.html
  */
 @Configuration
 public class SwaggerConfig {
