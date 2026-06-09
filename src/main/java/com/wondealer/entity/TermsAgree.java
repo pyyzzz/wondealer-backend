@@ -38,9 +38,4 @@ public class TermsAgree {
     @Column(updatable = false)
     private LocalDateTime agreedAt;
 
-
-
-
-
-
 }

@@ -54,14 +54,16 @@ public class AuthService {
         if (memberRepository.existsByNickname(dto.getNickname())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "이미 사용중인 닉네임입니다");
         }
+        // 2. Member 엔티티 생성 (아직 DB에 저장되지 않은 상태)
+        Member member = dto.toEntity(passwordEncoder);
 
-        // 2. 필수 약관 동의 검증
+        // 3. 필수 약관 동의 검증
         List<Long> agreedTerms = dto.getTermsAgreed();
 
-        // 2-1. DB에 저장된 모든 필수 약관 리스트 가져오기(isRequired=true)
+        // 3-1. DB에 저장된 모든 필수 약관 리스트 가져오기(isRequired=true)
         List<Terms> requiredTerms = termsRepository.findByIsRequiredTrue();
 
-        // 2-2. 사용자가 필수 약관을 모두 동의했는지 확인
+        // 3-2. 사용자가 필수 약관을 모두 동의했는지 확인
         for (Terms required : requiredTerms) {
             if (agreedTerms == null || !agreedTerms.contains(required.getId())) {
                 throw new CustomException(HttpStatus.BAD_REQUEST,
@@ -69,25 +71,16 @@ public class AuthService {
             }
         }
 
-        // 3. Member 엔티티 생성 (아직 DB에 저장되지 않은 상태)
-        Member member = dto.toEntity(passwordEncoder);
-
-        // 4. 정상적으로 동의했다면 동의 기록 저장
+        // 3-2. 약관 동의 객체 생성 및 Member와 연결
         if (agreedTerms != null) {
-            for (Long termsId : agreedTerms) {
-                Terms terms = termsRepository.findById(termsId)
-                        .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "존재하지 않는 약관 ID: " + termsId));
-
-                TermsAgree termsAgree = TermsAgree.builder()
-                        .member(member)
-                        .terms(terms)
-                        .isAgreed(true)
-                        .build();
-                termsAgreeRepository.save(termsAgree);
+            List<Terms> termsList = termsRepository.findAllById(agreedTerms);
+            if (termsList.size() != agreedTerms.size()) {
+                throw new CustomException(HttpStatus.BAD_REQUEST, "존재하지 않는 약관 ID가 포함되어 있습니다.");
             }
+            member.agreeToTerms(termsList); // Member 엔티티 내부에서 TermsAgree 생성 및 추가
         }
 
-        // 5. memberRepository.save() 후 MemberResDto.of() 반환
+        // 4. 최종 저장 (CascadeType.ALL 덕분에 member와 termsAgree가 한 번에 저장됨)
         memberRepository.save(member);
 
         return MemberResDto.of(member);
