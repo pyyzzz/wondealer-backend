@@ -6,7 +6,11 @@ import com.wondealer.dto.request.TokenReissueReqDto;
 import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.dto.response.TokenDto;
+import com.wondealer.entity.Member;
+import com.wondealer.exception.CustomException;
+import com.wondealer.repository.MemberRepository;
 import com.wondealer.service.AuthService;
+import com.wondealer.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final MemberRepository memberRepository;
+    private final EmailService emailService;
 
     // POST /auth/signup — 회원가입
     @PostMapping("/signup")
@@ -77,17 +83,24 @@ public class AuthController {
 
     // POST /auth/email/send — 이메일 인증 발송
     @PostMapping("/email/send")
-    public ResponseEntity<ApiResponse<?>> sendEmailVerification(@RequestParam String email) {
-        // TODO: 백엔드A 구현
-        // UUID 토큰 생성 → EMAIL_VERIFY INSERT → JavaMailSender 발송
-        return null;
+    public ResponseEntity<ApiResponse<String>> sendEmailVerification(@RequestParam String email) {
+        // 이메일로 가입된 회원 정보를 가져옵니다.
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "해당 이메일로 가입된 회원이 없습니다."));
+
+        // EmailService를 호출하여 토큰 생성 및 메일 발송을 수행합니다.
+        emailService.sendVerificationEmail(member);
+
+        return ResponseEntity.ok(ApiResponse.ok("인증 메일이 발송되었습니다.", null));
     }
 
     // GET /auth/email/verify — 이메일 인증 확인
     @GetMapping("/email/verify")
-    public ResponseEntity<ApiResponse<?>> verifyEmail(@RequestParam String token) {
-        // TODO: 백엔드A 구현
-        // token으로 EMAIL_VERIFY 조회 → 만료 확인 → is_email_verified = true
-        return null;
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String token) {
+        // AuthService에 구현된 로직을 호출
+        authService.verifyEmail(token);
+
+        // 인증이 성공하면 사용자에게 완료 메시지 보내기
+        return ResponseEntity.ok(ApiResponse.ok("이메일 인증이 성공적으로 완료되었습니다.", null));
     }
 }

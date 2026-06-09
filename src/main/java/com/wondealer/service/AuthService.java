@@ -4,15 +4,9 @@ import com.wondealer.dto.request.LoginReqDto;
 import com.wondealer.dto.request.SignUpReqDto;
 import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.dto.response.TokenDto;
-import com.wondealer.entity.Member;
-import com.wondealer.entity.RefreshToken;
-import com.wondealer.entity.Terms;
-import com.wondealer.entity.TermsAgree;
+import com.wondealer.entity.*;
 import com.wondealer.exception.CustomException;
-import com.wondealer.repository.MemberRepository;
-import com.wondealer.repository.RefreshTokenRepository;
-import com.wondealer.repository.TermsAgreeRepository;
-import com.wondealer.repository.TermsRepository;
+import com.wondealer.repository.*;
 import com.wondealer.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,11 +29,11 @@ public class AuthService {
     private final AuthenticationManagerBuilder managerBuilder;
     private final MemberRepository memberRepository;
     private final TermsRepository termsRepository;
-    private final TermsAgreeRepository termsAgreeRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private final EmailVerifyRepository emailVerifyRepository;
 
 
     // ── 회원가입 ──────────────────────────────────────────────────
@@ -156,5 +150,25 @@ public class AuthService {
         // 3. BCrypt 암호화 후 MEMBER.password UPDATE
         // 4. JavaMailSender로 이메일 발송
         throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "임시 비밀번호 발급 미구현");
+    }
+
+    // ── 사용자가 이메일 인증 링크를 클릭했을 때,
+    // 서버가 인증을 완료하고 회원의 가입 상태를 '인증 완료'로 변경 ────────────────────────────────────────
+    public void verifyEmail(String token) {
+        // 1. 토큰으로 EMAIL_VERIFY 조회
+        EmailVerify emailVerify = emailVerifyRepository.findByToken(token)
+                .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "유효하지 않은 인증 토큰입니다."));
+
+
+        // 2. 토큰 만료 시간 확인 (현재 시간과 비교)
+        if (emailVerify.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "인증 시간이 만료되었습니다. 다시 요청해주세요.");
+        }
+        // 3. 사용 여부 검증 및 상태 변경 (엔티티의 책임)
+        emailVerify.useToken();
+
+        // 4. 회원 상태 변경 (is_email_verified = true)
+        Member member = emailVerify.getMember();
+        member.setEmailVerified(true);
     }
 }
