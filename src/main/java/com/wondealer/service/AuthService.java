@@ -55,16 +55,13 @@ public class AuthService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "이미 사용중인 닉네임입니다");
         }
 
-        // 2. dto.toEntity(passwordEncoder)로 Member 생성 - 회원 저장
-        Member member = memberRepository.save(dto.toEntity(passwordEncoder));
-
-        // 3. 필수 약관 동의 검증 및 저장 (TermsAgree INSERT)
+        // 2. 필수 약관 동의 검증
         List<Long> agreedTerms = dto.getTermsAgreed();
 
-        // 3-1. DB에 저장된 모든 필수 약관 리스트 가져오기(isRequired=true)
+        // 2-1. DB에 저장된 모든 필수 약관 리스트 가져오기(isRequired=true)
         List<Terms> requiredTerms = termsRepository.findByIsRequiredTrue();
 
-        // 3-2. 사용자가 필수 약관을 모두 동의했는지 확인
+        // 2-2. 사용자가 필수 약관을 모두 동의했는지 확인
         for (Terms required : requiredTerms) {
             if (agreedTerms == null || !agreedTerms.contains(required.getId())) {
                 throw new CustomException(HttpStatus.BAD_REQUEST,
@@ -72,7 +69,10 @@ public class AuthService {
             }
         }
 
-        // 3-3. 정상적으로 동의했다면 동의 기록 저장
+        // 3. Member 엔티티 생성 (아직 DB에 저장되지 않은 상태)
+        Member member = dto.toEntity(passwordEncoder);
+
+        // 4. 정상적으로 동의했다면 동의 기록 저장
         if (agreedTerms != null) {
             for (Long termsId : agreedTerms) {
                 Terms terms = termsRepository.findById(termsId)
@@ -87,10 +87,10 @@ public class AuthService {
             }
         }
 
-        // 4. memberRepository.save() 후 MemberResDto.of() 반환
-        return MemberResDto.of(member);
+        // 5. memberRepository.save() 후 MemberResDto.of() 반환
+        memberRepository.save(member);
 
-        //throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "회원가입 미구현");
+        return MemberResDto.of(member);
     }
 
     // ── 로그인 ────────────────────────────────────────────────────

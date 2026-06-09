@@ -2,10 +2,7 @@ package com.wondealer.entity;
 
 // 약관 동의 기록 테이블
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "terms_agree")
 @Getter
+@Setter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class) //생성 시간(createdAt)과 수정 시간(updatedAt)을 자동으로 기록
 @AllArgsConstructor

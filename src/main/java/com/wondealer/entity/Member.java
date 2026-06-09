@@ -8,6 +8,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "member")
@@ -42,6 +44,9 @@ public class Member {
 
     @Column(length = 20)
     private String phone;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TermsAgree> termsAgrees = new ArrayList<>();
 
     // ── WonPay 출금 계좌 ─────────────────────────────────────────
     @Column(length = 50)
@@ -84,5 +89,10 @@ public class Member {
         this.authority       = authority;
         this.isEmailVerified = isEmailVerified;
         this.isBanned        = isBanned;
+    }
+
+    public void addTermsAgree(TermsAgree termsAgree) {
+        this.termsAgrees.add(termsAgree);
+        termsAgree.setMember(this); // 중요: 자식 쪽에도 부모를 세팅해야 합니다.
     }
 }
