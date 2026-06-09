@@ -104,7 +104,9 @@ public class AuthService {
         // 3. tokenProvider.generateTokenDto()로 JWT 발급
         TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
         // 4. Refresh Token DB 저장 (있으면 갱신, 없으면 새로 INSERT)
-        Member member = memberRepository.findByUsername(authentication.getName())
+        Long memberId = Long.parseLong(authentication.getName());
+
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
 
         RefreshToken refreshToken = refreshTokenRepository.findByMemberId(member.getId())
