@@ -4,9 +4,12 @@ import com.wondealer.constant.Authority;
 import com.wondealer.entity.Member;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -33,6 +36,11 @@ public class SignUpReqDto {
     @NotBlank(message = "비밀번호를 입력해주세요.")
     @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.")
     private String password;
+
+    //약관이 2개라 List, 약관id가 Long이라서
+    //약관 선택X =[], 약관 1만 선택=[1], 약관1,2 선택 = [1, 2]
+    @NotEmpty(message = "필수 약관에 동의해주세요.")
+    private List<Long> termsAgreed;
 
     // DTO → Entity 변환
     // authority는 클라이언트 입력 불가 — 반드시 ROLE_USER로 고정

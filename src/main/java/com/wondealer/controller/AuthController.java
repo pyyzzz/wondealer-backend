@@ -4,9 +4,12 @@ import com.wondealer.dto.request.LoginReqDto;
 import com.wondealer.dto.request.SignUpReqDto;
 import com.wondealer.dto.request.TokenReissueReqDto;
 import com.wondealer.dto.response.ApiResponse;
+import com.wondealer.dto.response.MemberResDto;
+import com.wondealer.dto.response.TokenDto;
 import com.wondealer.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,18 +22,22 @@ public class AuthController {
 
     // POST /auth/signup — 회원가입
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<?>> signup(@Valid @RequestBody SignUpReqDto dto) {
-        // TODO: 백엔드A 구현
+    public ResponseEntity<ApiResponse<MemberResDto>> signup(@Valid @RequestBody SignUpReqDto dto) {
+        MemberResDto memberResDto = authService.signup(dto);
         // authService.signup(dto) 호출 후 201 반환
-        return null;
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("회원가입이 완료되었습니다.", memberResDto));
     }
 
     // POST /auth/login — 로그인 (identifier: username 또는 email)
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginReqDto dto) {
+    public ResponseEntity<ApiResponse<TokenDto>> login(@RequestBody LoginReqDto dto) {
         // TODO: 백엔드A 구현
         // authService.login(dto) 호출 후 TokenDto 반환
-        return null;
+        TokenDto tokenDto = authService.login(dto);
+
+        // 2. ApiResponse<TokenDto> 타입으로 응답 반환
+        return ResponseEntity.ok(ApiResponse.ok("로그인 성공", tokenDto));
     }
 
     // POST /auth/reissue — Access Token 재발급

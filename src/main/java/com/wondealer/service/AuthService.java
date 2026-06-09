@@ -6,9 +6,13 @@ import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.dto.response.TokenDto;
 import com.wondealer.entity.Member;
 import com.wondealer.entity.RefreshToken;
+import com.wondealer.entity.Terms;
+import com.wondealer.entity.TermsAgree;
 import com.wondealer.exception.CustomException;
 import com.wondealer.repository.MemberRepository;
 import com.wondealer.repository.RefreshTokenRepository;
+import com.wondealer.repository.TermsAgreeRepository;
+import com.wondealer.repository.TermsRepository;
 import com.wondealer.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -27,31 +34,96 @@ public class AuthService {
 
     private final AuthenticationManagerBuilder managerBuilder;
     private final MemberRepository memberRepository;
+    private final TermsRepository termsRepository;
+    private final TermsAgreeRepository termsAgreeRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
 
+
     // ── 회원가입 ──────────────────────────────────────────────────
     public MemberResDto signup(SignUpReqDto dto) {
-        // TODO: 백엔드A 구현
-        // 1. 이메일/아이디/닉네임 중복 체크
-        // 2. dto.toEntity(passwordEncoder)로 Member 생성
-        // 3. memberRepository.save() 후 MemberResDto.of() 반환
-        // 4. 약관 동의 처리 (TermsAgree INSERT)
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "회원가입 미구현");
+        // 1-1. 이메일/아이디/닉네임 중복 체크
+        if (memberRepository.existsByEmail(dto.getEmail())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "이미 가입된 이메일입니다");
+        }
+        if (memberRepository.existsByUsername(dto.getUsername())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "이미 가입된 아이디입니다");
+        }
+        if (memberRepository.existsByNickname(dto.getNickname())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "이미 사용중인 닉네임입니다");
+        }
+
+        // 2. dto.toEntity(passwordEncoder)로 Member 생성 - 회원 저장
+        Member member = memberRepository.save(dto.toEntity(passwordEncoder));
+
+        // 3. 필수 약관 동의 검증 및 저장 (TermsAgree INSERT)
+        List<Long> agreedTerms = dto.getTermsAgreed();
+
+        // 3-1. DB에 저장된 모든 필수 약관 리스트 가져오기(isRequired=true)
+        List<Terms> requiredTerms = termsRepository.findByIsRequiredTrue();
+
+        // 3-2. 사용자가 필수 약관을 모두 동의했는지 확인
+        for (Terms required : requiredTerms) {
+            if (agreedTerms == null || !agreedTerms.contains(required.getId())) {
+                throw new CustomException(HttpStatus.BAD_REQUEST,
+                        required.getTitle() + "에 동의해야 합니다");
+            }
+        }
+
+        // 3-3. 정상적으로 동의했다면 동의 기록 저장
+        if (agreedTerms != null) {
+            for (Long termsId : agreedTerms) {
+                Terms terms = termsRepository.findById(termsId)
+                        .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "존재하지 않는 약관 ID: " + termsId));
+
+                TermsAgree termsAgree = TermsAgree.builder()
+                        .member(member)
+                        .terms(terms)
+                        .isAgreed(true)
+                        .build();
+                termsAgreeRepository.save(termsAgree);
+            }
+        }
+
+        // 4. memberRepository.save() 후 MemberResDto.of() 반환
+        return MemberResDto.of(member);
+
+        //throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "회원가입 미구현");
     }
 
     // ── 로그인 ────────────────────────────────────────────────────
     public TokenDto login(LoginReqDto dto) {
         // TODO: 백엔드A 구현
         // 1. dto.toAuthenticationToken()으로 인증 토큰 생성
+        UsernamePasswordAuthenticationToken authenticationToken = dto.toAuthenticationToken();
         // 2. managerBuilder.getObject().authenticate()로 인증
         //    → CustomUserDetailsService.loadUserByUsername() 자동 호출
+        Authentication authentication = managerBuilder.getObject().authenticate(authenticationToken);
         // 3. tokenProvider.generateTokenDto()로 JWT 발급
+        TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
         // 4. Refresh Token DB 저장 (있으면 갱신, 없으면 새로 INSERT)
+        Member member = memberRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+
+        RefreshToken refreshToken = refreshTokenRepository.findByMemberId(member.getId())
+                .map(token -> {
+                    token.updateToken(tokenDto.getRefreshToken(), LocalDateTime.now().plusDays(7));
+                    return token;
+                })
+                .orElse(RefreshToken.builder()
+                        .memberId(member.getId())
+                        .tokenValue(tokenDto.getRefreshToken())
+                        .expiresAt(LocalDateTime.now().plusDays(7))
+                        .build());
+
+        refreshTokenRepository.save(refreshToken);
         // 5. TokenDto에 nickname 담아서 반환
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "로그인 미구현");
+        tokenDto.setNickname(member.getNickname());
+
+        return tokenDto;
+        //throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "로그인 미구현");
     }
 
     // ── Access Token 재발급 ───────────────────────────────────────
