@@ -7,6 +7,7 @@ import com.wondealer.dto.response.TokenDto;
 import com.wondealer.entity.Member;
 import com.wondealer.exception.CustomException;
 import com.wondealer.repository.MemberRepository;
+import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.AuthService;
 import com.wondealer.service.EmailService;
 import jakarta.validation.Valid;
@@ -56,10 +57,14 @@ public class AuthController {
     // POST /auth/logout — 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout() {
-        // TODO: 백엔드A 구현
         // SecurityUtil.getCurrentMemberId()로 memberId 추출
-        // authService.logout(memberId) 호출
-        return null;
+        Long memberId = SecurityUtil.getCurrentMemberId();
+
+        // authService.logout(memberId) 호출 - 서비스 계층을 통해 로그아웃 처리
+        authService.logout(memberId);
+
+        // 3. 로그아웃 성공 메시지 반환
+        return ResponseEntity.ok(ApiResponse.ok("로그아웃되었습니다.", null));
     }
 
     // POST /auth/find-username — 아이디 찾기

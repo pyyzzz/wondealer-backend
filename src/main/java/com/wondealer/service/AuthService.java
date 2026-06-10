@@ -168,14 +168,11 @@ public class AuthService {
         refreshTokenRepository.save(savedToken);
 
         return tokenDto;
-        // throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "토큰 재발급 미구현");
     }
 
     // ── 로그아웃 ──────────────────────────────────────────────────
     public void logout(Long memberId) {
-        // TODO: 백엔드A 구현
-        // refreshTokenRepository.deleteByMemberId(memberId)
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "로그아웃 미구현");
+        refreshTokenRepository.deleteByMemberId(memberId);
     }
 
     // ── 아이디 찾기 ───────────────────────────────────────────────
