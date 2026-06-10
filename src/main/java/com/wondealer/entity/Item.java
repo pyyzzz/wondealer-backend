@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "item")
@@ -21,96 +19,45 @@ public class Item {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "seller_id", nullable = false)
     private Member seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private GameCategory gameCategory; // 대분류 카테고리와 바로 매핑
+    @JoinColumn(name = "category_id", nullable = false) // 💡 설계서 매칭: 아이템/게임머니/계정 종류 결정
+    private GameCategory gameCategory;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "server_id", nullable = true) // 서버가 없는 게임을 위해 NULL 허용
+    @JoinColumn(name = "server_id", nullable = false) // 💡 설계서 매칭: 서버 및 게임 추적의 핵심 다리
     private GameServer gameServer;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
 
-    @Lob
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    private String content;
 
-    @Column(nullable = false)
-    private Long price; // 일반거래: 즉시구매가 / 경매: 시작가
+    @Column(name = "price", nullable = false)
+    private Long price;
 
-    @Column(name = "trade_type", nullable = false, length = 255)
-    private String tradeType; // DIRECT, AUCTION
-
-    @Column(name = "game_name", nullable = false, length = 50)
-    private String gameName; // 예: "LOST ARK", "MapleStory"
-
-    @Column(name = "server_name", nullable = false, length = 50)
-    private String serverName; // 예: "루페온", "실리안"
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "item_type", nullable = false, length = 20)
-    private ItemType itemType; // 💡 새롭게 추가될 버튼 필터링용 (ITEM, CURRENCY, ACCOUNT)
-
-    @Column(nullable = false, length = 255)
-    private String status; // SELLING, COMPLETED, DELETED
-
-    @Column(name = "is_deleted_by_admin", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean isDeletedByAdmin;
-
-    @Column(name = "view_count", nullable = false)
-    private int viewCount;
+    @Column(name = "status", nullable = false, length = 20)
+    private String status; // ON_SALE, RESERVED, SOLD_OUT
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ItemImage> images = new ArrayList<>();
-
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     @Builder
-    public Item(Member seller, GameCategory gameCategory, GameServer gameServer, String title,
-                String description, Long price, String tradeType, String status) {
+    public Item(Member seller, GameCategory gameCategory, GameServer gameServer, String title, String content, Long price) {
         this.seller = seller;
         this.gameCategory = gameCategory;
         this.gameServer = gameServer;
         this.title = title;
-        this.description = description;
+        this.content = content;
         this.price = price;
-        this.tradeType = tradeType;
-        this.status = status;
-        this.isDeletedByAdmin = false;
-        this.viewCount = 0;
-    }
-
-    // === 도메인 비즈니스 메서드 ===
-    public void updateItem(String title, String description, Long price) {
-        if (title != null) this.title = title;
-        if (description != null) this.description = description;
-        if (price != null) this.price = price;
-    }
-
-    public void changeStatus(String status) {
-        this.status = status;
-    }
-
-    public void incrementViewCount() {
-        this.viewCount++;
+        this.status = "ON_SALE";
     }
 }
