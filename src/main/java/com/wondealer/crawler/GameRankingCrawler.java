@@ -29,44 +29,34 @@ public class GameRankingCrawler {
 
     private static final String TARGET_URL = "https://www.gamemeca.com/ranking.php";
     private static final int MAX_RANK = 10;
-    private static final int TIMEOUT_MS = 10_000; // 10초 타임아웃
+    private static final int TIMEOUT_MS = 10_000;
 
-    /**
-     * 게임메카에서 순위 데이터를 크롤링해서 반환
-     * 실패 시 빈 리스트 반환 → Service에서 기존 데이터 유지 (fallback)
-     */
     public List<GameRanking> crawl() {
         List<GameRanking> rankings = new ArrayList<>();
 
         try {
-            // Jsoup으로 HTML 페이지 요청
             Document doc = Jsoup.connect(TARGET_URL)
                     .timeout(TIMEOUT_MS)
-                    .userAgent("Mozilla/5.0") // 봇 차단 방지
+                    .userAgent("Mozilla/5.0")
                     .get();
 
-            // tr.ranking-table-rows 선택자로 모든 게임 행 조회
             Elements rows = doc.select("tr.ranking-table-rows");
 
             int count = 0;
             for (Element row : rows) {
                 if (count >= MAX_RANK) break;
 
-                // 순위 추출: span.rank 텍스트
                 String rankText = row.select("span.rank").text().trim();
-                // 게임명 추출: div.game-name > a 텍스트
                 String gameName = row.select("div.game-name a").text().trim();
-                // 이미지 URL 추출: img.game-icon의 src 속성
                 String gameImg  = row.select("img.game-icon").attr("src").trim();
 
-                // 필수 데이터 누락 시 해당 행 스킵
                 if (rankText.isEmpty() || gameName.isEmpty()) {
                     log.warn("크롤링 데이터 누락 - rank: {}, gameName: {}", rankText, gameName);
                     continue;
                 }
 
                 rankings.add(GameRanking.builder()
-                        .rank(Integer.parseInt(rankText))
+                        .gameRank(Integer.parseInt(rankText))
                         .gameName(gameName)
                         .gameImg(gameImg.isEmpty() ? null : gameImg)
                         .build());
@@ -77,8 +67,6 @@ public class GameRankingCrawler {
             log.info("크롤링 성공 - {}개 게임 데이터 수집", rankings.size());
 
         } catch (Exception e) {
-            // 네트워크 오류, 파싱 오류 등 모든 예외 처리
-            // 빈 리스트 반환 → Service에서 기존 DB 데이터 유지
             log.error("크롤링 실패 - 기존 데이터 유지: {}", e.getMessage());
         }
 

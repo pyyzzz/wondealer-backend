@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface GameRankingRepository extends JpaRepository<GameRanking, Long> {
 
-    // 순위 오름차순 ( 1위 - 10위 )
-    List<GameRanking> findAllByOrderByRankAsc();
+    // 순위 오름차순 조회 (1위 → 10위)
+    List<GameRanking> findAllByOrderByGameRankAsc();
 }

@@ -1,10 +1,7 @@
 package com.wondealer.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "game_ranking")
@@ -12,15 +9,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
-
 public class GameRanking {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ranking_id")
     private Long id;
 
-    @Column(nullable = false)
-    private Integer rank;        // 순위 (1~10)
+    @Column(name = "game_rank", nullable = false)
+    private Integer gameRank;    // 순위 (1~10) — rank는 MySQL 예약어라 game_rank 사용
 
     @Column(nullable = false, length = 100)
     private String gameName;     // 게임명

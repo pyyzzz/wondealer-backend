@@ -12,14 +12,13 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GameRankingResDto {
 
-    private Integer rank;      // 순위
+    private Integer gameRank;  // 순위
     private String gameName;   // 게임명
     private String gameImg;    // 게임 이미지 URL
 
-    // Entity → DTO 변환
     public static GameRankingResDto of(GameRanking gameRanking) {
         return GameRankingResDto.builder()
-                .rank(gameRanking.getRank())
+                .gameRank(gameRanking.getGameRank())
                 .gameName(gameRanking.getGameName())
                 .gameImg(gameRanking.getGameImg())
                 .build();
