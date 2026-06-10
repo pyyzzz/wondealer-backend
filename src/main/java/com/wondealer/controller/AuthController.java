@@ -46,10 +46,11 @@ public class AuthController {
 
     // POST /auth/reissue — Access Token 재발급
     @PostMapping("/reissue")
-    public ResponseEntity<ApiResponse<?>> reissue(@RequestBody TokenReissueReqDto dto) {
-        // TODO: 백엔드A 구현
+    public ResponseEntity<ApiResponse<TokenDto>> reissue(@RequestBody TokenReissueReqDto dto) {
         // authService.reissue(dto.getAccessToken(), dto.getRefreshToken()) 호출
-        return null;
+        TokenDto tokenDto = authService.reissue(dto.getAccessToken(), dto.getRefreshToken());
+
+        return ResponseEntity.ok(ApiResponse.ok("토큰이 재발급되었습니다", tokenDto));
     }
 
     // POST /auth/logout — 로그아웃

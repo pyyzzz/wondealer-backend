@@ -132,14 +132,43 @@ public class AuthService {
 
     // ── Access Token 재발급 ───────────────────────────────────────
     public TokenDto reissue(String accessToken, String refreshToken) {
-        // TODO: 백엔드A 구현
         // 1. tokenProvider.getMemberIdFromToken()으로 만료된 토큰에서 memberId 추출
+        // Access Token이 만료되어도 토큰 내부의 사용자 정보(Claim)는 추출 가능해야 함
+        Long memberId = tokenProvider.getMemberIdFromToken(accessToken);
+
         // 2. DB에서 Refresh Token 조회
+        // 해당 사용자가 가지고 있는 가장 최신의 Refresh Token을 DB에서 확인
+        RefreshToken savedToken = refreshTokenRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new CustomException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."));
+
         // 3. savedToken.isExpired() 확인 → 만료 시 로그인 요청
+        // 토큰의 유효 기간이 지났는지 확인 (시간적 보안 검증)
+        if (savedToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            refreshTokenRepository.delete(savedToken); // 만료된 토큰은 삭제
+            throw new CustomException(HttpStatus.UNAUTHORIZED, "세션이 만료되었습니다. 다시 로그인해주세요.");
+        }
+
         // 4. 전달받은 refreshToken == DB 저장값 일치 확인 (탈취 방어)
+        // 클라이언트가 보낸 토큰과 DB 값이 다른 경우, 토큰 탈취 혹은 중복 로그인 시도로 간주하여 차단
+        if (!savedToken.getTokenValue().equals(refreshToken)) {
+            throw new CustomException(HttpStatus.UNAUTHORIZED, "토큰 정보가 일치하지 않습니다.");
+        }
+
         // 5. 새 Access Token 발급 후 반환
+        // 검증 완료 시, 기존 인증 정보를 바탕으로 새로운 토큰 세트(Access + Refresh)를 생성
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(String.valueOf(memberId));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+
+        TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
+
         // 6. (선택) Sliding: Refresh Token도 함께 갱신
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "토큰 재발급 미구현");
+        // 사용자가 활동 중이라면 Refresh Token의 유효 기간을 다시 7일로 연장 (Sliding Window 기법)
+        savedToken.updateToken(tokenDto.getRefreshToken(), tokenProvider.getRefreshTokenExpiry());
+        refreshTokenRepository.save(savedToken);
+
+        return tokenDto;
+        // throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "토큰 재발급 미구현");
     }
 
     // ── 로그아웃 ──────────────────────────────────────────────────
