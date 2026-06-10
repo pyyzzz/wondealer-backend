@@ -36,6 +36,7 @@ public class AuthService {
     private final CustomUserDetailsService customUserDetailsService;
     private final EmailVerifyRepository emailVerifyRepository;
     private final EmailService emailService;
+    private final WalletRepository walletRepository;
 
 
     // ── 회원가입 ──────────────────────────────────────────────────
@@ -79,25 +80,37 @@ public class AuthService {
         // 4. 최종 저장 (CascadeType.ALL 덕분에 member와 termsAgree가 한 번에 저장됨)
         memberRepository.save(member);
 
+        // 5. 회원가입 시 WALLET 자동 생성
+        Wallet wallet = Wallet.createWallet(member);
+        walletRepository.save(wallet);
+
         return MemberResDto.of(member);
     }
 
     // ── 로그인 ────────────────────────────────────────────────────
     public TokenDto login(LoginReqDto dto) {
-        // TODO: 백엔드A 구현
-        // 1. dto.toAuthenticationToken()으로 인증 토큰 생성
-        UsernamePasswordAuthenticationToken authenticationToken = dto.toAuthenticationToken();
-        // 2. managerBuilder.getObject().authenticate()로 인증
+        // 1. identifier(이메일 또는 아이디)로 회원 조회
+        Member member = memberRepository.findByEmail(dto.getIdentifier())  // 이메일로 먼저 찾아보고
+                .or(() -> memberRepository.findByUsername(dto.getIdentifier()))  // 없으면 아이디로 찾아봄
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "가입되지 않은 정보입니다."));
+
+        // 2. 차단 여부 체크
+        if (member.isBanned()) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "차단된 계정입니다. 관리자에게 문의하세요.");
+        }
+
+        // 3. 인증 매니저에게 '이 이메일(member.getEmail())의 패스워드를 검증해줘'라고 명확히 지시
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(member.getEmail(), dto.getPassword());
+
+        // 4. managerBuilder.getObject().authenticate()로 인증
         //    → CustomUserDetailsService.loadUserByUsername() 자동 호출
         Authentication authentication = managerBuilder.getObject().authenticate(authenticationToken);
-        // 3. tokenProvider.generateTokenDto()로 JWT 발급
+
+        // 5. tokenProvider.generateTokenDto()로 JWT 발급
         TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
-        // 4. Refresh Token DB 저장 (있으면 갱신, 없으면 새로 INSERT)
-        Long memberId = Long.parseLong(authentication.getName());
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
-
+        // 6. Refresh Token DB 저장 (있으면 갱신, 없으면 새로 INSERT)
         RefreshToken refreshToken = refreshTokenRepository.findByMemberId(member.getId())
                 .map(token -> {
                     token.updateToken(tokenDto.getRefreshToken(), LocalDateTime.now().plusDays(7));
@@ -110,11 +123,11 @@ public class AuthService {
                         .build());
 
         refreshTokenRepository.save(refreshToken);
+
         // 5. TokenDto에 nickname 담아서 반환
         tokenDto.setNickname(member.getNickname());
 
         return tokenDto;
-        //throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "로그인 미구현");
     }
 
     // ── Access Token 재발급 ───────────────────────────────────────

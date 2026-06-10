@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 public class EmailVerify {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "verify_id")
     private Long id; // PK
 
