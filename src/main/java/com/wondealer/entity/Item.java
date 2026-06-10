@@ -45,6 +45,16 @@ public class Item {
     @Column(name = "trade_type", nullable = false, length = 255)
     private String tradeType; // DIRECT, AUCTION
 
+    @Column(name = "game_name", nullable = false, length = 50)
+    private String gameName; // 예: "LOST ARK", "MapleStory"
+
+    @Column(name = "server_name", nullable = false, length = 50)
+    private String serverName; // 예: "루페온", "실리안"
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_type", nullable = false, length = 20)
+    private ItemType itemType; // 💡 새롭게 추가될 버튼 필터링용 (ITEM, CURRENCY, ACCOUNT)
+
     @Column(nullable = false, length = 255)
     private String status; // SELLING, COMPLETED, DELETED
 
