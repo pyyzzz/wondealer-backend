@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "WALLET")
+@Table(name = "wallet")
 @Getter
 // 무분별한 객체 생성을 막기 위해 기본 생성자는 무조건 PROTECTED로 제한하는 게 JPA 실무 표준이야!
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

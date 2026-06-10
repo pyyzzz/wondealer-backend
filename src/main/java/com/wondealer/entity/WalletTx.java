@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "WALLET_TX")
+@Table(name = "wallet_tx")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WalletTx {

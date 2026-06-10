@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ITEM_IMAGE")
+@Table(name = "item_image")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ItemImage {

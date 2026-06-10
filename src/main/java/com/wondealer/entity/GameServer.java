@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "GAME_SERVER")
+@Table(name = "game_server")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GameServer {
