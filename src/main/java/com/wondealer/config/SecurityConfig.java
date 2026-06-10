@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/rankings").permitAll() // 랭킹 모두 확인 가능하게 허용
                         // 관리자 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // 나머지 전부 인증 필요

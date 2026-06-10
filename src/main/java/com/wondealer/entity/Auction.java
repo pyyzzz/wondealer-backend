@@ -46,6 +46,9 @@ public class Auction {
     @JoinColumn(name = "winner_id")
     private Member winner;
 
+    @Version
+    private Integer version;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
