@@ -56,7 +56,7 @@ public class AuthController {
 
     // POST /auth/logout — 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<?>> logout() {
+    public ResponseEntity<ApiResponse<Void>> logout() {
         // SecurityUtil.getCurrentMemberId()로 memberId 추출
         Long memberId = SecurityUtil.getCurrentMemberId();
 
@@ -69,11 +69,12 @@ public class AuthController {
 
     // POST /auth/find-username — 아이디 찾기
     @PostMapping("/find-username")
-    public ResponseEntity<ApiResponse<?>> findUsername(@RequestBody /* TODO: FindUsernameReqDto */ Object dto) {
-        // TODO: 백엔드A 구현
+    public ResponseEntity<ApiResponse<String>> findUsername(@RequestBody FindUsernameReqDto dto) {
         // name + email 받아서 authService.findUsername() 호출
+        String maskedUsername = authService.findUsername(dto.getName(), dto.getEmail());
+
         // 마스킹된 username 반환 (예: kim***ng)
-        return null;
+        return ResponseEntity.ok(ApiResponse.ok("아이디 찾기 성공", maskedUsername));
     }
 
     // POST /auth/reset-password — 임시 비밀번호 발급

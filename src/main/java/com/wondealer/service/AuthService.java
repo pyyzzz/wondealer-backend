@@ -177,10 +177,25 @@ public class AuthService {
 
     // ── 아이디 찾기 ───────────────────────────────────────────────
     public String findUsername(String name, String email) {
-        // TODO: 백엔드A 구현
         // 1. name + email로 회원 조회
+        Member member = memberRepository.findByNameAndEmail(name, email)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "일치하는 회원 정보를 찾을 수 없습니다."));
+
         // 2. username 마스킹 처리 후 반환 (예: kim***ng)
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "아이디 찾기 미구현");
+        return maskUsername(member.getUsername());
+    }
+    // username 마스킹 처리
+    private String maskUsername(String username) {
+        // null이거나 길이가 2이하인 경우, 마스킹처리하지 않고 반환
+        if (username == null || username.length() <= 2) return username;
+
+        int len = username.length();
+        int maskLen = len / 2;  // 전체 길이의 절반을 마스킹할 길이로 설정
+        //앞부분과 뒷부분은 살리고 중간부분을 "*"오 대체
+        String prefix = username.substring(0, (len - maskLen) / 2);
+        String suffix = username.substring(len - (len - maskLen) / 2);
+
+        return prefix + "*".repeat(maskLen) + suffix;
     }
 
     // ── 임시 비밀번호 발급 ────────────────────────────────────────
