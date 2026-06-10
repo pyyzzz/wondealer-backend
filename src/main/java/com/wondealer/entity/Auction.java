@@ -30,7 +30,7 @@ public class Auction {
     @Column(name = "current_price", nullable = false)
     private Long currentPrice;
 
-    @Column(name = "instant_buy_price") // 즉시 낙찰가 (null 가능)
+    @Column(name = "instant_buy_price")
     private Long instantBuyPrice;
 
     @Column(name = "bid_count", nullable = false)
@@ -39,11 +39,11 @@ public class Auction {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
-    @Column(name = "status", nullable = false, length = 50)
-    private String status; // PROGRESS, SUCCESS, CANCELED, END_NO_BID
+    @Column(name = "status", nullable = false, length = 10)
+    private String status; // 💡 설계서 스펙: ONGOING / ENDED / CANCELLED
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "winner_id") // 낙찰 전까지 null
+    @JoinColumn(name = "winner_id")
     private Member winner;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -65,7 +65,7 @@ public class Auction {
         this.instantBuyPrice = instantBuyPrice;
         this.bidCount = 0;
         this.endTime = endTime;
-        this.status = "PROGRESS";
+        this.status = "ONGOING"; // 💡 설계서 기본값 매칭
     }
 
     // === 경매 비즈니스 도메인 메서드 ===
@@ -75,11 +75,11 @@ public class Auction {
     }
 
     public void endWithWinner(Member winner) {
-        this.status = "SUCCESS";
+        this.status = "ENDED"; // 💡 설계서 스펙 반영
         this.winner = winner;
     }
 
     public void cancelAuction() {
-        this.status = "CANCELED";
+        this.status = "CANCELLED"; // 💡 설계서 스펙 반영
     }
 }

@@ -8,6 +8,6 @@ import java.util.Optional;
 @Repository
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
-    // 💡 서비스 계층에서 회원의 id(memberId)를 가지고 지갑을 바로 조회할 수 있도록 쿼리 메서드 미리 추가
+    // 💡 설계서 스펙 반영: 회원 고유 ID(memberId)를 통해 해당 유저의 지갑을 1:1로 조회
     Optional<Wallet> findByMemberId(Long memberId);
 }

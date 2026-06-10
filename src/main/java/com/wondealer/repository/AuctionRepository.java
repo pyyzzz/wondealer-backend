@@ -7,13 +7,20 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
-    // 💡 다른 방식 적용: 입찰할 때 데이터베이스 레포지토리 레벨에서 락을 걸어 줄을 세움 (SELECT ... FOR UPDATE)
+    // 💡 동시성 제어용 비관적 락 (SELECT ... FOR UPDATE)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Auction a WHERE a.id = :id")
     Optional<Auction> findByIdWithPessimisticLock(@Param("id") Long id);
+
+    // 💡 설계서 스펙 반영: Item -> GameServer -> Game -> gameName 순으로 객체 그래프 탐색
+    // 실시간 경매 아이템 화면에서 [게임명]과 [서버명] 조건에 맞는 진행중(ONGOING)인 경매를 마감 임박순으로 정렬
+    List<Auction> findByItem_GameServer_Game_GameNameAndItem_GameServer_ServerNameAndStatusOrderByEndTimeAsc(
+            String gameName, String serverName, String status
+    );
 }
