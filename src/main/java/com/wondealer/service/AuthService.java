@@ -36,7 +36,7 @@ public class AuthService {
     private final CustomUserDetailsService customUserDetailsService;
     private final EmailVerifyRepository emailVerifyRepository;
     private final EmailService emailService;
-    private final WalletRepository walletRepository;
+//    private final WalletRepository walletRepository;
 
 
     // ── 회원가입 ──────────────────────────────────────────────────
@@ -80,9 +80,9 @@ public class AuthService {
         // 4. 최종 저장 (CascadeType.ALL 덕분에 member와 termsAgree가 한 번에 저장됨)
         memberRepository.save(member);
 
-        // 5. 회원가입 시 WALLET 자동 생성
-        Wallet wallet = Wallet.createWallet(member);
-        walletRepository.save(wallet);
+//        // 5. 회원가입 시 WALLET 자동 생성
+//        Wallet wallet = Wallet.createWallet(member);
+//        walletRepository.save(wallet);
 
         return MemberResDto.of(member);
     }

@@ -112,7 +112,7 @@ public class Member {
 
         // TermsAgree 쪽에도 현재 Member를 설정 (양방향 연결)
         if (termsAgree.getMember() != this) {
-            termsAgree.setMember(this);
+            termsAgree.assignMember(this);
         }
     }
 }
