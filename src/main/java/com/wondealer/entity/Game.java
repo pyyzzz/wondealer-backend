@@ -26,8 +26,9 @@ public class Game {
     @Column(name = "game_img", length = 500)
     private String gameImg;
 
-    @Column(name = "is_active", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
-    private boolean isActive;
+    // 설계서 반영: TINYINT(1)에 대응하는 Boolean 타입 사용 및 명확한 제약 조건 설정
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -47,6 +48,10 @@ public class Game {
     public Game(String gameName, String gameImg, boolean isActive) {
         this.gameName = gameName;
         this.gameImg = gameImg;
+        this.isActive = true;
+    }
+    // 비즈니스 로직: 관리자의 게임 활성화/비활성화 제어용 메서드
+    public void changeActiveStatus(boolean isActive) {
         this.isActive = isActive;
     }
 }

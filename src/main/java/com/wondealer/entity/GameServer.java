@@ -24,13 +24,18 @@ public class GameServer {
     @Column(name = "server_name", nullable = false, length = 100)
     private String serverName;
 
-    @Column(name = "is_active", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
-    private boolean isActive;
+    // 설계서 반영: 원시 타입 boolean 대신 객체 타입 Boolean 사용 및 columnDefinition 지양
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
 
     @Builder
     public GameServer(Game game, String serverName, boolean isActive) {
         this.game = game;
         this.serverName = serverName;
+        this.isActive = isActive;
+    }
+    // 비즈니스 로직: 관리자의 서버 활성화/비활성화 상태 제어용 메서드
+    public void changeActiveStatus(boolean isActive) {
         this.isActive = isActive;
     }
 }

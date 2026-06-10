@@ -18,31 +18,32 @@ public class WalletTx {
     @Column(name = "tx_id")
     private Long id;
 
-    // 어떤 지갑에서 일어난 트랜잭션인지 연결 (지갑 하나는 여러 내역을 가짐 = 1:N)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id", nullable = false)
     private Wallet wallet;
 
-    // 💡 중요: CHAR나 VARCHAR로 상태를 바로 저장하기보다 자바의 Enum 타입을 사용하는 것이 안전해.
-    // 하지만 DB에는 이 Enum의 '문자열 이름(CHARGE, WITHDRAW 등)'이 고스란히 박히도록 @Enumerated(EnumType.STRING)이 필수야!
-    // (기본값인 ORDINAL을 쓰면 숫자로 저장돼서 나중에 순서 바뀌면 대참사 난다)
+    // 설계서 반영: 길이를 스펙 명세인 20으로 최적화 (CHARGE, USE, REFUND, WITHDRAW, SETTLEMENT)
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 50)
-    private WalletTxType type; // CHARGE(충전), PAYMENT(결제), REFUND(환불), WITHDRAW(출금)
+    @Column(name = "type", nullable = false, length = 20)
+    private WalletTxType type;
 
     @Column(name = "amount", nullable = false)
-    private Long amount; // 거래 금액
+    private Long amount; // 양수: 증가 / 음수: 감소
 
-    @Column(name = "fee", nullable = false)
-    private Long fee; // 플랫폼 수수료 (없으면 0)
+    @Column(name = "fee") // 설계서 스펙 반영: 출금/충전 수수료 금액 (그 외엔 NULL 가능)
+    private Long fee;
 
-    // 어떤 거래(Trade) 때문에 이 돈이 움직였는지 추적하기 위한 연관관계 필드야.
-    // 충전이나 출금일 때는 거래 id가 없으므로 nullable = true(허용) 처리해 줘야 해!
-    @Column(name = "trade_id", nullable = true)
-    private Long tradeId;
+    // 설계서 반영: 단순 Long tradeId가 아닌, 외래키 연관 관계(FK) 객체 매핑으로 변경 (충전/출금 시엔 NULL 허용)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trade_id", nullable = true)
+    private Trade trade;
 
-    @Column(name = "description", length = 255)
-    private String description; // "메이플스토리 아이템 구매", "카카오페이 충전" 등 내용 기록용
+    // 설계서 반영: 오직 WITHDRAW(출금) 타입에만 사용되는 상태값 컬럼 추가 (PENDING, COMPLETED)
+    @Column(name = "status", length = 10)
+    private String status;
+
+    @Column(name = "description", length = 200) // 설계서 스펙 반영: 길이를 200으로 수정
+    private String description;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -53,12 +54,29 @@ public class WalletTx {
     }
 
     @Builder
-    public WalletTx(Wallet wallet, WalletTxType type, Long amount, Long fee, Long tradeId, String description) {
+    public WalletTx(Wallet wallet, WalletTxType type, Long amount, Long fee, Trade trade, String description) {
         this.wallet = wallet;
         this.type = type;
         this.amount = amount;
-        this.fee = fee != null ? fee : 0L; // 수수료가 null로 들어오면 0원으로 방어해 주는 코드
-        this.tradeId = tradeId;
+        this.fee = fee != null ? fee : 0L;
+        this.trade = trade;
         this.description = description;
+
+        // 비즈니스 룰 반영: 출금(WITHDRAW) 트랜잭션이 최초 생성될 때는 기본적으로 'PENDING' 상태로 인입
+        if (type == WalletTxType.WITHDRAW) {
+            this.status = "PENDING";
+        } else {
+            this.status = null;
+        }
+    }
+
+    // === 비즈니스 도메인 메서드 ===
+
+    // 관리자가 출금 처리를 완료(계좌 이체 완료)했을 때 상태를 COMPLETED로 변경하는 로직
+    public void completeWithdraw() {
+        if (this.type != WalletTxType.WITHDRAW) {
+            throw new IllegalStateException("출금 타입의 트랜잭션만 상태를 변경할 수 있습니다.");
+        }
+        this.status = "COMPLETED";
     }
 }

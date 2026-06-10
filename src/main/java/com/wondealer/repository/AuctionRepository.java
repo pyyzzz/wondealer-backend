@@ -1,26 +1,28 @@
 package com.wondealer.repository;
 
 import com.wondealer.entity.Auction;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
-    // 💡 동시성 제어용 비관적 락 (SELECT ... FOR UPDATE)
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT a FROM Auction a WHERE a.id = :id")
-    Optional<Auction> findByIdWithPessimisticLock(@Param("id") Long id);
-
-    // 💡 설계서 스펙 반영: Item -> GameServer -> Game -> gameName 순으로 객체 그래프 탐색
-    // 실시간 경매 아이템 화면에서 [게임명]과 [서버명] 조건에 맞는 진행중(ONGOING)인 경매를 마감 임박순으로 정렬
-    List<Auction> findByItem_GameServer_Game_GameNameAndItem_GameServer_ServerNameAndStatusOrderByEndTimeAsc(
-            String gameName, String serverName, String status
+    // 💡 설계서 스펙 반영 고도화:
+    // status를 외부에서 "PROGRESS" 등으로 잘못 찌르는 실수를 방지하기 위해
+    // JPQL 내부에서 설계서 지정 문자열인 'ONGOING'을 고정 조건으로 박아 넣었습니다.
+    @Query("SELECT a FROM Auction a " +
+            "JOIN FETCH a.item i " +
+            "JOIN i.gameServer gs " +
+            "JOIN gs.game g " +
+            "WHERE g.gameName = :gameName " +
+            "AND gs.serverName = :serverName " +
+            "AND a.status = 'ONGOING' " + // 설계서 지정 상태 고정
+            "ORDER BY a.endTime ASC")
+    List<Auction> findActiveAuctionsByGameAndServer(
+            @Param("gameName") String gameName,
+            @Param("serverName") String serverName
     );
 }
