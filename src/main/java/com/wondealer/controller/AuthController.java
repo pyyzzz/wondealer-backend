@@ -1,8 +1,6 @@
 package com.wondealer.controller;
 
-import com.wondealer.dto.request.LoginReqDto;
-import com.wondealer.dto.request.SignUpReqDto;
-import com.wondealer.dto.request.TokenReissueReqDto;
+import com.wondealer.dto.request.*;
 import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.dto.response.TokenDto;
@@ -74,31 +72,30 @@ public class AuthController {
 
     // POST /auth/reset-password — 임시 비밀번호 발급
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody /* TODO: ResetPasswordReqDto */ Object dto) {
-        // TODO: 백엔드A 구현
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody ResetPasswordReqDto dto) {
         // email 받아서 authService.resetPassword() 호출
+        authService.resetPassword(dto.getEmail());
         // 임시 비밀번호 이메일 발송
-        return null;
+        return ResponseEntity.ok(ApiResponse.ok("임시 비밀번호가 이메일로 발송되었습니다.", null));
     }
 
     // POST /auth/email/send — 이메일 인증 발송
     @PostMapping("/email/send")
-    public ResponseEntity<ApiResponse<String>> sendEmailVerification(@RequestParam String email) {
-        // 이메일로 가입된 회원 정보를 가져옵니다.
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "해당 이메일로 가입된 회원이 없습니다."));
+    public ResponseEntity<ApiResponse<String>> sendEmailVerification(@RequestBody EmailReqDto dto) {
+        // 1. 비즈니스 로직 위임: 서비스 계층에서 회원 존재 여부 확인 및 이메일 발송 처리
+        authService.sendVerificationEmail(dto.getEmail());
 
-        // EmailService를 호출하여 토큰 생성 및 메일 발송을 수행합니다.
-        emailService.sendVerificationEmail(member);
-
+        // 2. 결과 응답: 인증 메일 발송 성공 안내
         return ResponseEntity.ok(ApiResponse.ok("인증 메일이 발송되었습니다.", null));
     }
 
-    // GET /auth/email/verify — 이메일 인증 확인
-    @GetMapping("/email/verify")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String token) {
-        // AuthService에 구현된 로직을 호출
-        authService.verifyEmail(token);
+    // POST /auth/email/verify — 이메일 인증 확인
+    // RequestBody로 바꾸면서 POST로 써야해서 중간 다리 역할(프론트엔드 페이지)이 하나 추가해야함.
+    // EmailVerifyPage.js를 만들어야함
+    @PostMapping("/email/verify")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestBody EmailVerifyReqDto dto) {
+        // 1. 비즈니스 로직 위임: 서비스 계층에서 토큰 검증 및 회원 상태 업데이트 처리
+        authService.verifyEmail(dto.getToken());
 
         // 인증이 성공하면 사용자에게 완료 메시지 보내기
         return ResponseEntity.ok(ApiResponse.ok("이메일 인증이 성공적으로 완료되었습니다.", null));

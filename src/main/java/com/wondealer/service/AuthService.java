@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,7 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final EmailVerifyRepository emailVerifyRepository;
+    private final EmailService emailService;
 
 
     // ── 회원가입 ──────────────────────────────────────────────────
@@ -144,13 +146,36 @@ public class AuthService {
 
     // ── 임시 비밀번호 발급 ────────────────────────────────────────
     public void resetPassword(String email) {
-        // TODO: 백엔드A 구현
         // 1. email로 회원 조회
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "해당 이메일로 가입된 회원이 없습니다."));
+
         // 2. 임시 비밀번호 생성 (UUID 앞 8자리)
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+
         // 3. BCrypt 암호화 후 MEMBER.password UPDATE
+        member.setPassword(passwordEncoder.encode(tempPassword));
+        memberRepository.save(member);
+
         // 4. JavaMailSender로 이메일 발송
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "임시 비밀번호 발급 미구현");
+        String subject = "[WonDealer] 임시 비밀번호 안내";
+        String text = "요청하신 임시 비밀번호는 " + tempPassword + " 입니다.\n로그인 후 반드시 비밀번호를 변경해 주세요.";
+
+        emailService.sendEmail(email, subject, text);
     }
+
+    // ── 사용자가 요청한 이메일 주소가 우리 서비스에
+    // 실제로 존재하는지 확인하고, 존재한다면 인증 프로세스를 시작 ────────────────────────────────────────
+    public void sendVerificationEmail(String email) {
+        // 1. 회원 조회 (로직을 서비스로 이동)
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "해당 이메일로 가입된 회원이 없습니다."));
+
+        // 2. 이메일 발송 서비스 호출
+        emailService.sendVerificationEmail(member);
+    }
+
+
 
     // ── 사용자가 이메일 인증 링크를 클릭했을 때,
     // 서버가 인증을 완료하고 회원의 가입 상태를 '인증 완료'로 변경 ────────────────────────────────────────
