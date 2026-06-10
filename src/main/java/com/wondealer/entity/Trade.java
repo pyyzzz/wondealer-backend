@@ -24,7 +24,7 @@ public class Trade {
     private Item item;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false)
     private Member seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
