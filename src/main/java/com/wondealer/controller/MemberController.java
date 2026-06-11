@@ -1,10 +1,10 @@
 package com.wondealer.controller;
 
 import com.wondealer.dto.request.ChangePasswordReqDto;
-import com.wondealer.dto.request.UpdateMemberReqDto;
+import com.wondealer.dto.request.UpdateMemberAccountReqDto;
 import com.wondealer.dto.response.ApiResponse;
+import com.wondealer.dto.response.MemberAccountResDto;
 import com.wondealer.dto.response.MemberResDto;
-import com.wondealer.service.AuthService;
 import com.wondealer.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +28,12 @@ public class MemberController {
 
     // PATCH /api/members/me — 회원 정보 수정 (닉네임, 프로필 이미지, 계좌 정보)
     @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<MemberResDto>> updateMyInfo(@RequestBody UpdateMemberReqDto dto) {
+    public ResponseEntity<ApiResponse<MemberAccountResDto>> updateMyInfo(@RequestBody UpdateMemberAccountReqDto dto) {
         // memberService.updateMyInfo(dto) 호출
-        MemberResDto updatedMember = memberService.updateMyInfo(dto);
+        MemberAccountResDto updatedMemberAccount = memberService.updateMyInfo(dto);
 
         // 2. 수정된 회원 정보 반환
-        return ResponseEntity.ok(ApiResponse.ok("회원 정보가 수정되었습니다.", updatedMember));
+        return ResponseEntity.ok(ApiResponse.ok("회원 정보가 수정되었습니다.", updatedMemberAccount));
     }
 
     // PATCH /api/members/me/password — 비밀번호 변경

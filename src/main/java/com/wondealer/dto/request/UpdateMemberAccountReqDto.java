@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UpdateMemberReqDto {
+public class UpdateMemberAccountReqDto {
 
     private String nickName;        // 변경할 닉네임
 

@@ -1,6 +1,7 @@
 package com.wondealer.service;
 
-import com.wondealer.dto.request.UpdateMemberReqDto;
+import com.wondealer.dto.request.UpdateMemberAccountReqDto;
+import com.wondealer.dto.response.MemberAccountResDto;
 import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.entity.Member;
 import com.wondealer.exception.CustomException;
@@ -29,12 +30,14 @@ public class MemberService {
         // memberRepository.findById() → MemberResDto.of() 반환 (없으면 예외 발생)
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원정보를 찾을 수 없습니다"));
+
+        // 수정된 정보를 DTO로 변환하여 반환
         return MemberResDto.of(member);
     }
 
     // ── 회원 정보 수정 ────────────────────────────────────────────
     @Transactional
-    public MemberResDto updateMyInfo(UpdateMemberReqDto dto ) {
+    public MemberAccountResDto updateMyInfo(UpdateMemberAccountReqDto dto ) {
         // 1. 현재 로그인한 회원 조회
         Long memberId = SecurityUtil.getCurrentMemberId();
         Member member = memberRepository.findById(memberId)
@@ -48,9 +51,30 @@ public class MemberService {
         if (dto.getAccountNumber() != null) member.setAccountNumber(dto.getAccountNumber());
         if (dto.getAccountHolder() != null) member.setAccountHolder(dto.getAccountHolder());
 
-        // 3. 수정된 정보를 DTO로 변환하여 반환
-        return MemberResDto.of(member);
+        // 3. 마스킹 처리: 수정된 정보를 바로 DTO로 변환하여 반환
+        String masked = maskAccountNumber(member.getAccountNumber());
+
+        // 4. 수정된 정보를 DTO로 변환하여 반환
+        return MemberAccountResDto.of(member, masked);
     }
+
+    /**
+     * 계좌번호 마스킹: 앞 4자리 노출, 나머지 * 처리
+     * 예: 1234567890 -> 1234******
+     */
+    public String maskAccountNumber(String accountNumber) {
+        // 1. 데이터가 없거나 4자리 미만이면 안전하게 마스킹 처리
+        if (accountNumber == null || accountNumber.length() < 4) {
+            return "****";
+        }
+
+        String visiblePart = accountNumber.substring(0, 4); // 2. 앞 4자리 추출
+
+        String maskedPart = "*".repeat(accountNumber.length() - 4); // 3. 나머지 길이만큼 * 생성
+
+        return visiblePart + maskedPart;    // 4. 합쳐서 반환
+    }
+
 
     // ── 비밀번호 변경 ─────────────────────────────────────────────
     @Transactional
