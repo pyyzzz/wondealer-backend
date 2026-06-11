@@ -79,6 +79,7 @@ public class AuthService {
 
         // 4. 최종 저장 (CascadeType.ALL 덕분에 member와 termsAgree가 한 번에 저장됨)
         memberRepository.save(member);
+        emailService.sendVerificationEmail(member);
 
 //        // 5. 회원가입 시 WALLET 자동 생성
 //        Wallet wallet = Wallet.createWallet(member);
@@ -208,7 +209,7 @@ public class AuthService {
         String tempPassword = UUID.randomUUID().toString().substring(0, 8);
 
         // 3. BCrypt 암호화 후 MEMBER.password UPDATE
-        member.setPassword(passwordEncoder.encode(tempPassword));
+        member.changePassword(passwordEncoder.encode(tempPassword));
         memberRepository.save(member);
 
         // 4. JavaMailSender로 이메일 발송
@@ -248,6 +249,6 @@ public class AuthService {
 
         // 4. 회원 상태 변경 (is_email_verified = true)
         Member member = emailVerify.getMember();
-        member.setEmailVerified(true);
+        member.verifyEmail();
     }
 }

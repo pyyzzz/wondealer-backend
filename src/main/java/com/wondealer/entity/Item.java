@@ -65,7 +65,7 @@ public class Item {
     private boolean isDeletedByAdmin = false;
 
 
-    // 💡 오류 조치: 제거되었던 이미지 1:N 연관관계 객체 그래프 복구 완료
+    // 이미지 1:N 연관관계
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemImage> images = new ArrayList<>();
 

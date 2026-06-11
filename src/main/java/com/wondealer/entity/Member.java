@@ -14,7 +14,6 @@ import java.util.List;
 @Entity
 @Table(name = "member")
 @Getter
-@Setter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // @CreatedDate, @LastModifiedDate 자동 관리
 public class Member {
@@ -115,4 +114,32 @@ public class Member {
             termsAgree.assignMember(this);
         }
     }
+
+    // 이메일 인증 완료
+    public void verifyEmail() {
+        this.isEmailVerified = true;
+    }
+
+    // 비밀번호 변경
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    // 프로필 수정
+    public void updateProfile(String nickname, String profileImg) {
+        if (nickname != null) this.nickname = nickname;
+        if (profileImg != null) this.profileImg = profileImg;
+    }
+
+    // 계좌 정보 수정
+    public void updateBankInfo(String bankName, String accountNumber, String accountHolder) {
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.accountHolder = accountHolder;
+    }
+
+    // 회원 정지/해제 (관리자)
+    public void ban() { this.isBanned = true; }
+    public void unban() { this.isBanned = false; }
+
 }
