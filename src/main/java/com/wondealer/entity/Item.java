@@ -25,41 +25,31 @@ public class Item {
     private Member seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private GameCategory gameCategory; // 대분류 카테고리와 바로 매핑
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "server_id", nullable = true) // 서버가 없는 게임을 위해 NULL 허용
+    @JoinColumn(name = "server_id", nullable = true)
     private GameServer gameServer;
 
-    @Column(nullable = false, length = 255)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private GameCategory gameCategory;
+
+    @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Lob
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "description",nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
-    private Long price; // 일반거래: 즉시구매가 / 경매: 시작가
+    @Column(name = "price", nullable = false)
+    private Long price;
 
-    @Column(name = "trade_type", nullable = false, length = 255)
-    private String tradeType; // DIRECT, AUCTION
-
-    @Column(name = "game_name", nullable = false, length = 50)
-    private String gameName; // 예: "LOST ARK", "MapleStory"
-
-    @Column(name = "server_name", nullable = false, length = 50)
-    private String serverName; // 예: "루페온", "실리안"
-
+    // 오류 수정: ItemStatus ENUM 객체 매핑 및 어노테이션 추가
     @Enumerated(EnumType.STRING)
-    @Column(name = "item_type", nullable = false, length = 20)
-    private ItemType itemType; // 💡 새롭게 추가될 버튼 필터링용 (ITEM, CURRENCY, ACCOUNT)
+    @Column(name = "status", nullable = false, length = 20)
+    private ItemStatus status;
 
-    @Column(nullable = false, length = 255)
-    private String status; // SELLING, COMPLETED, DELETED
-
-    @Column(name = "is_deleted_by_admin", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean isDeletedByAdmin;
+    // 오류 수정: TradeType ENUM 객체 매핑 및 어노테이션 추가
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trade_type", nullable = false, length = 10)
+    private TradeType tradeType;
 
     @Column(name = "view_count", nullable = false)
     private int viewCount;
@@ -70,13 +60,20 @@ public class Item {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_deleted_by_admin", nullable = false,
+            columnDefinition = "TINYINT(1) DEFAULT 0")
+    private boolean isDeletedByAdmin = false;
+
+
+    // 💡 오류 조치: 제거되었던 이미지 1:N 연관관계 객체 그래프 복구 완료
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemImage> images = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
@@ -85,32 +82,62 @@ public class Item {
     }
 
     @Builder
-    public Item(Member seller, GameCategory gameCategory, GameServer gameServer, String title,
-                String description, Long price, String tradeType, String status) {
+    public Item(Member seller, GameServer gameServer, GameCategory gameCategory,
+                String title, String description, Long price, TradeType tradeType) {
         this.seller = seller;
-        this.gameCategory = gameCategory;
         this.gameServer = gameServer;
+        this.gameCategory = gameCategory;
         this.title = title;
         this.description = description;
         this.price = price;
         this.tradeType = tradeType;
-        this.status = status;
-        this.isDeletedByAdmin = false;
+        this.status = ItemStatus.SELLING; // 설계서 스펙 기본값: SELLING
         this.viewCount = 0;
     }
 
-    // === 도메인 비즈니스 메서드 ===
-    public void updateItem(String title, String description, Long price) {
-        if (title != null) this.title = title;
-        if (description != null) this.description = description;
-        if (price != null) this.price = price;
-    }
+    // === 💡 오류 조치: 유실되었던 핵심 비즈니스 도메인 메서드 전면 복구 ===
 
-    public void changeStatus(String status) {
-        this.status = status;
-    }
-
+    /**
+     * 상품 조회수 증가
+     */
     public void incrementViewCount() {
         this.viewCount++;
     }
+
+    /**
+     * 거래 진행에 따른 상품 상태 변경 (예약중)
+     */
+    public void reserveItem() {
+        if (this.status != ItemStatus.SELLING) {
+            throw new IllegalStateException("판매 중인 상품만 예약 상태로 변경할 수 있습니다.");
+        }
+        this.status = ItemStatus.RESERVED;
+    }
+
+    /**
+     * 거래 완료에 따른 최종 상태 변경 (완료)
+     */
+    public void completeItem() {
+        this.status = ItemStatus.COMPLETED;
+    }
+
+    /**
+     * 예약 취소 등에 따른 판매중 상태 원복
+     */
+    public void cancelReservation() {
+        if (this.status != ItemStatus.RESERVED) {
+            throw new IllegalStateException("예약 상태의 상품만 판매중으로 되돌릴 수 있습니다.");
+        }
+        this.status = ItemStatus.SELLING;
+    }
+
+    /**
+     * 상품 소프트 딜리트(Soft Delete)
+     */
+    public void deleteByAdmin() {
+        this.isDeletedByAdmin = true;
+        this.status = ItemStatus.DELETED;
+    }
+
+
 }

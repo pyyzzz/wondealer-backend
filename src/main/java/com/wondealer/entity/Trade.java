@@ -58,11 +58,11 @@ public class Trade {
         this.buyer = buyer;
         this.tradePrice = tradePrice;
         this.tradeType = tradeType;
-        this.status = TradeStatus.PAY_WAITING;
+        this.status = TradeStatus.PENDING_PAYMENT;
     }
 
     public void completePayment() {
-        if (this.status != TradeStatus.PAY_WAITING) {
+        if (this.status != TradeStatus.PENDING_PAYMENT) {
             throw new IllegalStateException("결제 대기 상태의 거래만 결제가 가능합니다.");
         }
         this.status = TradeStatus.PAID;
@@ -72,12 +72,12 @@ public class Trade {
         if (this.status != TradeStatus.PAID) {
             throw new IllegalStateException("결제가 완료된 거래만 물품 인계가 가능합니다.");
         }
-        this.status = TradeStatus.SHIPPED;
+        this.status = TradeStatus.COMPLETED;
     }
 
     public void completeTrade() {
-        if (this.status != TradeStatus.SHIPPED) {
-            throw new IllegalStateException("판매자가 물품을 인계한 상태에서만 거래 확정이 가능합니다.");
+        if (this.status != TradeStatus.COMPLETED) {
+            throw new IllegalStateException("결제 완료 상태의 거래만 거래 확정이 가능합니다.");
         }
         this.status = TradeStatus.COMPLETED;
     }
