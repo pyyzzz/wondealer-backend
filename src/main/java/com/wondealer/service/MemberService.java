@@ -1,6 +1,7 @@
 package com.wondealer.service;
 
 import com.wondealer.dto.response.MemberResDto;
+import com.wondealer.entity.Member;
 import com.wondealer.exception.CustomException;
 import com.wondealer.repository.MemberRepository;
 import com.wondealer.security.SecurityUtil;
@@ -17,11 +18,15 @@ public class MemberService {
     private final MemberRepository memberRepository;
 
     // ── 내 정보 조회 ──────────────────────────────────────────────
+    @Transactional(readOnly = true)  // 조회 전용 트랜잭션
     public MemberResDto getMyInfo() {
-        // TODO: 백엔드A 구현
         // SecurityUtil.getCurrentMemberId()로 현재 로그인 회원 ID 조회
-        // memberRepository.findById() → MemberResDto.of() 반환
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "내 정보 조회 미구현");
+        Long memberId = SecurityUtil.getCurrentMemberId();
+
+        // memberRepository.findById() → MemberResDto.of() 반환 (없으면 예외 발생)
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원정보를 찾을 수 없습니다"));
+        return MemberResDto.of(member);
     }
 
     // ── 회원 정보 수정 ────────────────────────────────────────────

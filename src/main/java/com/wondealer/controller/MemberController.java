@@ -1,6 +1,7 @@
 package com.wondealer.controller;
 
 import com.wondealer.dto.response.ApiResponse;
+import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,16 +10,17 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
+// @GetMapping (조회 전용), @PatchMapping (일부 수정 전용)
 public class MemberController {
 
     private final MemberService memberService;
 
     // GET /api/members/me — 내 정보 조회
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<?>> getMyInfo() {
-        // TODO: 백엔드A 구현
+    public ResponseEntity<ApiResponse<MemberResDto>> getMyInfo() {
         // memberService.getMyInfo() 호출
-        return null;
+        MemberResDto memberResDto = memberService.getMyInfo();
+        return ResponseEntity.ok(ApiResponse.ok("내 정보 조회 성공", memberResDto));
     }
 
     // PATCH /api/members/me — 회원 정보 수정 (닉네임, 프로필 이미지, 계좌 정보)
