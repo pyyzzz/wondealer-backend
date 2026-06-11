@@ -1,5 +1,6 @@
 package com.wondealer.controller;
 
+import com.wondealer.dto.request.ChangePasswordReqDto;
 import com.wondealer.dto.request.UpdateMemberReqDto;
 import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.MemberResDto;
@@ -37,10 +38,10 @@ public class MemberController {
 
     // PATCH /api/members/me/password — 비밀번호 변경
     @PatchMapping("/me/password")
-    public ResponseEntity<ApiResponse<?>> changePassword(@RequestBody /* TODO: ChangePasswordReqDto */ Object dto) {
-        // TODO: 백엔드A 구현
+    public ResponseEntity<ApiResponse<?>> changePassword(@RequestBody ChangePasswordReqDto dto) {
         // 현재 비밀번호 검증 후 새 비밀번호로 변경
-        return null;
+        memberService.changePassword(dto.getCurrentPassword(), dto.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.ok("비밀번호가 변경되었습니다.", null));
     }
 
     // GET /api/members/me/trades — 내 거래 내역 (구매/판매 탭 구분)

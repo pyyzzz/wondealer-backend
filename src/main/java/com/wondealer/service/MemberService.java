@@ -8,6 +8,7 @@ import com.wondealer.repository.MemberRepository;
 import com.wondealer.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // ── 내 정보 조회 ──────────────────────────────────────────────
     @Transactional(readOnly = true)  // 조회 전용 트랜잭션
@@ -33,10 +35,8 @@ public class MemberService {
     // ── 회원 정보 수정 ────────────────────────────────────────────
     @Transactional
     public MemberResDto updateMyInfo(UpdateMemberReqDto dto ) {
-        // 1. 현재 로그인한 회원 ID 조회
+        // 1. 현재 로그인한 회원 조회
         Long memberId = SecurityUtil.getCurrentMemberId();
-
-        // 2. DB에서 해당 ID의 회원 조회
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
 
@@ -55,10 +55,17 @@ public class MemberService {
     // ── 비밀번호 변경 ─────────────────────────────────────────────
     @Transactional
     public void changePassword(String currentPassword, String newPassword) {
-        // TODO: 백엔드A 구현
+        // 1. 현재 로그인한 회원 조회
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+
         // 1. 현재 비밀번호 BCrypt 검증
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다");
+        }
         // 2. 새 비밀번호 암호화 후 UPDATE
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "비밀번호 변경 미구현");
+        member.setPassword(passwordEncoder.encode(newPassword));
     }
 
     // ── 내 거래 내역 조회 ─────────────────────────────────────────
