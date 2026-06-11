@@ -1,5 +1,6 @@
 package com.wondealer.service;
 
+import com.wondealer.dto.request.UpdateMemberReqDto;
 import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.entity.Member;
 import com.wondealer.exception.CustomException;
@@ -31,10 +32,24 @@ public class MemberService {
 
     // ── 회원 정보 수정 ────────────────────────────────────────────
     @Transactional
-    public MemberResDto updateMyInfo(/* TODO: UpdateMemberReqDto dto */) {
-        // TODO: 백엔드A 구현
-        // 닉네임, 프로필 이미지, 계좌 정보 수정
-        throw new CustomException(HttpStatus.NOT_IMPLEMENTED, "회원 정보 수정 미구현");
+    public MemberResDto updateMyInfo(UpdateMemberReqDto dto ) {
+        // 1. 현재 로그인한 회원 ID 조회
+        Long memberId = SecurityUtil.getCurrentMemberId();
+
+        // 2. DB에서 해당 ID의 회원 조회
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+
+        // 2. 유저가 수정을 요청한 필드들만 선택적으로 업데이트
+        // DTO의 필드가 null이 아닌 경우에만 변경 -> 기존의 소중한 데이터를 덮어쓰지 않도록 보호
+        if (dto.getNickName() != null) member.setNickname(dto.getNickName());
+        if (dto.getProfileImg() != null) member.setProfileImg(dto.getProfileImg());
+        if (dto.getBankName() != null) member.setBankName(dto.getBankName());
+        if (dto.getAccountNumber() != null) member.setAccountNumber(dto.getAccountNumber());
+        if (dto.getAccountHolder() != null) member.setAccountHolder(dto.getAccountHolder());
+
+        // 3. 수정된 정보를 DTO로 변환하여 반환
+        return MemberResDto.of(member);
     }
 
     // ── 비밀번호 변경 ─────────────────────────────────────────────

@@ -20,6 +20,9 @@ public class MemberResDto {
     private String name;        // 성함
     private String nickname;
     private String profileImg;
+    private String bankName;        //은행이름
+    private String accountNumber;   //계좌번호
+    private String accountHolder;   //예금주
     private boolean isEmailVerified;
     private boolean isBanned;
     private Authority authority;
@@ -33,6 +36,9 @@ public class MemberResDto {
                 .name(member.getName())
                 .nickname(member.getNickname())
                 .profileImg(member.getProfileImg())
+                .bankName(member.getBankName())
+                .accountNumber(member.getAccountNumber())
+                .accountHolder(member.getAccountHolder())
                 .isEmailVerified(member.isEmailVerified())
                 .isBanned(member.isBanned())
                 .authority(member.getAuthority())
