@@ -23,17 +23,17 @@ public class Bid {
     private Auction auction;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member bidder; // 입찰자
+    @JoinColumn(name = "member_id", nullable = false) // 💡 설계서 스펙 원복완료
+    private Member bidder;
 
     @Column(name = "bid_price", nullable = false)
     private Long bidPrice;
 
-    @Column(name = "bid_time", nullable = false)
+    @Column(name = "bid_time", nullable = false) // 💡 설계서 스펙 원복완료
     private LocalDateTime bidTime;
 
-    @Column(name = "status", nullable = false, length = 50)
-    private String status; // VALID, OUTBID, WON
+    @Column(name = "status", nullable = false, length = 10)
+    private String status; // 💡 설계서 스펙: VALID / OUTBID / WON
 
     @PrePersist
     protected void onCreate() {
@@ -45,10 +45,9 @@ public class Bid {
         this.auction = auction;
         this.bidder = bidder;
         this.bidPrice = bidPrice;
-        this.status = "VALID"; // 첫 입찰 시에는 유효 상태
+        this.status = "VALID";
     }
 
-    // === 비즈니스 메서드 ===
     public void changeStatus(String status) {
         this.status = status;
     }
