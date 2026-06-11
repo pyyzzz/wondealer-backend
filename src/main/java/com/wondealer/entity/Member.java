@@ -8,6 +8,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "member")
@@ -42,6 +44,9 @@ public class Member {
 
     @Column(length = 20)
     private String phone;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TermsAgree> termsAgrees = new ArrayList<>();
 
     // ── WonPay 출금 계좌 ─────────────────────────────────────────
     @Column(length = 50)
@@ -84,5 +89,30 @@ public class Member {
         this.authority       = authority;
         this.isEmailVerified = isEmailVerified;
         this.isBanned        = isBanned;
+    }
+
+    // 리스트를 순회하며 동의 객체를 생성함 - 약관 동의 작업을 수행하는 절차
+    public void agreeToTerms(List<Terms> termsList) {
+        for (Terms terms : termsList) {
+            // TermsAgree 객체 생성 및 리스트 추가
+            TermsAgree agree = TermsAgree.builder()
+                    .member(this)
+                    .terms(terms)
+                    .isAgreed(true)
+                    .build();
+
+            // 연관관계 편의 메서드 호출
+            this.addTermsAgree(agree);
+        }
+    }
+
+    // 생성된 객체를 리스트에 넣고 부모 정보를 세팅 - 데이터가 꼬이지 않게 양쪽을 정확히 연결해주는 절차
+    public void addTermsAgree(TermsAgree termsAgree) {
+        this.termsAgrees.add(termsAgree); // 리스트에 추가
+
+        // TermsAgree 쪽에도 현재 Member를 설정 (양방향 연결)
+        if (termsAgree.getMember() != this) {
+            termsAgree.assignMember(this);
+        }
     }
 }
