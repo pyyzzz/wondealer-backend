@@ -125,9 +125,10 @@ public class Member {
     }
 
     // 프로필 수정
-    public void updateProfile(String nickname, String profileImg) {
-        if (nickname != null) this.nickname = nickname;
-        if (profileImg != null) this.profileImg = profileImg;
+    public void updateMemberInfo(String nickname, String phone) {
+        // 각각 닉네임과 전화번호가 null이 아니고, 빈 문자열이 아닐 때만 업데이트
+        if (nickname != null && !nickname.isBlank()) this.nickname = nickname;
+        if (phone != null && !phone.isBlank()) this.phone = phone;
     }
 
     // 계좌 정보 수정
