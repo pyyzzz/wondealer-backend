@@ -97,7 +97,6 @@ public class Member {
             TermsAgree agree = TermsAgree.builder()
                     .member(this)
                     .terms(terms)
-                    .isAgreed(true)
                     .build();
 
             // 연관관계 편의 메서드 호출
