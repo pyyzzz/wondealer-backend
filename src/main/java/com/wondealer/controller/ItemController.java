@@ -1,9 +1,9 @@
 package com.wondealer.controller;
 
-import com.wondealer.dto.request.ItemReqDto;
+import com.wondealer.dto.request.ItemCreateReqDto;
 import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.ItemDetailResDto;
-import com.wondealer.dto.response.ItemResDto;
+import com.wondealer.dto.response.ItemCreateResDto;
 import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.ItemService;
 import jakarta.validation.Valid;
@@ -20,11 +20,11 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping("/direct")
-    public ResponseEntity<ApiResponse<ItemResDto>> createDirectItem(
-            @Valid @RequestBody ItemReqDto dto
+    public ResponseEntity<ApiResponse<ItemCreateResDto>> createDirectItem(
+            @Valid @RequestBody ItemCreateReqDto dto
     ) {
         Long memberId = SecurityUtil.getCurrentMemberId();
-        ItemResDto response = itemService.createDirectItem(memberId, dto);
+        ItemCreateResDto response = itemService.createDirectItem(memberId, dto);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("판매 상품이 등록되었습니다.", response));

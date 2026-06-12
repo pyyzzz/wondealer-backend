@@ -1,8 +1,8 @@
 package com.wondealer.service;
 
-import com.wondealer.dto.request.ItemReqDto;
+import com.wondealer.dto.request.ItemCreateReqDto;
 import com.wondealer.dto.response.ItemDetailResDto;
-import com.wondealer.dto.response.ItemResDto;
+import com.wondealer.dto.response.ItemCreateResDto;
 import com.wondealer.entity.*;
 import com.wondealer.exception.CustomException;
 import com.wondealer.repository.GameCategoryRepository;
@@ -24,7 +24,7 @@ public class ItemService {
     private final GameCategoryRepository gameCategoryRepository;
     private final GameServerRepository gameServerRepository;
 
-    public ItemResDto createDirectItem(Long memberId, ItemReqDto dto) {
+    public ItemCreateResDto createDirectItem(Long memberId, ItemCreateReqDto dto) {
         Member seller = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "로그인 후 상품 등록이 가능합니다."));
 
@@ -51,13 +51,13 @@ public class ItemService {
                 .gameServer(server)
                 .title(dto.getTitle())
                 .description(dto.getDescription())
-                .price(dto.getPrice())
+                .price(dto.getBasePrice())
                 .tradeType(TradeType.DIRECT)
                 .build();
 
         Item savedItem = itemRepository.save(item);
 
-        return ItemResDto.from(savedItem);
+        return ItemCreateResDto.from(savedItem);
     }
 
     @Transactional(readOnly = true)

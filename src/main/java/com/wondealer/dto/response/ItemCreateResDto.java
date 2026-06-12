@@ -6,15 +6,15 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ItemResDto {
+public class ItemCreateResDto {
 
     private Long itemId;
     private String title;
     private String tradeType;
     private String status;
 
-    public static ItemResDto from(Item item) {
-        return ItemResDto.builder()
+    public static ItemCreateResDto from(Item item) {
+        return ItemCreateResDto.builder()
                 .itemId(item.getId())
                 .title(item.getTitle())
                 .tradeType(item.getTradeType().name())

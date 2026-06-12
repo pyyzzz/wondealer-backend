@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 
 @Getter
-public class ItemReqDto {
+public class ItemCreateReqDto {
 
     @NotBlank
     private String title;
@@ -21,5 +21,5 @@ public class ItemReqDto {
 
     @NotNull
     @Positive
-    private Long price;
+    private Long basePrice;
 }
