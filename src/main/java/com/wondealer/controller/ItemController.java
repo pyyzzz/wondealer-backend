@@ -1,8 +1,10 @@
 package com.wondealer.controller;
 
+import com.wondealer.dto.request.AuctionCreateReqDto;
 import com.wondealer.dto.request.ItemCreateReqDto;
 import com.wondealer.dto.request.ItemUpdateReqDto;
 import com.wondealer.dto.response.ApiResponse;
+import com.wondealer.dto.response.AuctionCreateResDto;
 import com.wondealer.dto.response.ItemCreateResDto;
 import com.wondealer.dto.response.ItemDetailResDto;
 import com.wondealer.dto.response.ItemListResDto;
@@ -54,6 +56,17 @@ public class ItemController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("판매 상품이 등록되었습니다.", response));
+    }
+
+    @PostMapping("/auction")
+    public ResponseEntity<ApiResponse<AuctionCreateResDto>> createAuctionItem(
+            @Valid @RequestBody AuctionCreateReqDto dto
+    ) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        AuctionCreateResDto response = itemService.createAuctionItem(memberId, dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("경매 상품이 등록되었습니다.", response));
     }
 
     @GetMapping("/{itemId}")
