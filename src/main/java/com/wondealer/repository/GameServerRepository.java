@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface GameServerRepository extends JpaRepository<GameServer, Long> {
     List<GameServer> findByGameId(Long gameId);
+    List<GameServer> findByGameIdAndIsActiveTrue(Long gameId);
 }

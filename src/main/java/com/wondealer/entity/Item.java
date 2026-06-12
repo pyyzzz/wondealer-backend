@@ -139,5 +139,25 @@ public class Item {
         this.status = ItemStatus.DELETED;
     }
 
+    /**
+     * 판매자가 상품 정보를 수정한다. null 또는 빈 문자열은 기존 값을 유지한다.
+     */
+    public void updateItem(String title, String description, Long price) {
+        if (title != null && !title.isBlank()) {
+            this.title = title;
+        }
+        if (description != null && !description.isBlank()) {
+            this.description = description;
+        }
+        if (price != null) {
+            this.price = price;
+        }
+    }
 
+    /**
+     * 판매자가 상품을 삭제 상태로 변경한다.
+     */
+    public void deleteBySeller() {
+        this.status = ItemStatus.DELETED;
+    }
 }
