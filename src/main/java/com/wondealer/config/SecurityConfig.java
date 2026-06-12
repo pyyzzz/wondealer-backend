@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/rankings").permitAll() // 랭킹 모두 확인 가능하게 허용
+                        .requestMatchers(HttpMethod.GET, "/api/items/**").permitAll()  // 상품 목록 조회
+                        .requestMatchers(HttpMethod.GET, "/api/games/**").permitAll() // 게임 목록 조회
                         // 관리자 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // 나머지 전부 인증 필요
