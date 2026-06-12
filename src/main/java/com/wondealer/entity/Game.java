@@ -47,6 +47,6 @@ public class Game {
     public Game(String gameName, String gameImg, boolean isActive) {
         this.gameName = gameName;
         this.gameImg = gameImg;
-        this.isActive = isActive;
+        this.isActive = true;
     }
 }

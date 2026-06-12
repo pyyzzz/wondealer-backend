@@ -53,7 +53,6 @@ public class DataInitializer implements CommandLineRunner {
         // ── 로스트아크 ──────────────────────────────────────────
         Game lostArk = gameRepository.save(Game.builder()
                 .gameName("로스트아크")
-                .isActive(true)
                 .build());
         saveCategories(lostArk, true);  // 아이템/게임머니/계정/기타 전부
         saveServers(lostArk, List.of("아브렐슈드", "카단", "니나브", "루페온"));
@@ -61,7 +60,6 @@ public class DataInitializer implements CommandLineRunner {
         // ── 메이플스토리 ────────────────────────────────────────
         Game maple = gameRepository.save(Game.builder()
                 .gameName("메이플스토리")
-                .isActive(true)
                 .build());
         saveCategories(maple, true);
         saveServers(maple, List.of("리부트", "일반"));
@@ -69,7 +67,6 @@ public class DataInitializer implements CommandLineRunner {
         // ── 디아블로4 ───────────────────────────────────────────
         Game diablo = gameRepository.save(Game.builder()
                 .gameName("디아블로4")
-                .isActive(true)
                 .build());
         saveCategories(diablo, true);
         // 서버 없음
@@ -78,7 +75,6 @@ public class DataInitializer implements CommandLineRunner {
         // 아이템/게임머니 거래 불가 → 계정/기타만
         Game lol = gameRepository.save(Game.builder()
                 .gameName("리그 오브 레전드")
-                .isActive(true)
                 .build());
         saveCategories(lol, false);
         // 서버 없음
@@ -87,7 +83,6 @@ public class DataInitializer implements CommandLineRunner {
         // 아이템/게임머니 거래 불가 → 계정/기타만
         Game valorant = gameRepository.save(Game.builder()
                 .gameName("발로란트")
-                .isActive(true)
                 .build());
         saveCategories(valorant, false);
         // 서버 없음

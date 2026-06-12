@@ -31,6 +31,6 @@ public class GameServer {
     public GameServer(Game game, String serverName, boolean isActive) {
         this.game = game;
         this.serverName = serverName;
-        this.isActive = isActive;
+        this.isActive = true;
     }
 }
