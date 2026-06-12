@@ -30,9 +30,6 @@ public class TermsAgree {
     @JoinColumn(name = "terms_id", nullable = false)
     private Terms terms;
 
-    @Column(nullable = false)
-    private boolean isAgreed;  // true=이사람이 약관에 동의했다
-
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime agreedAt;

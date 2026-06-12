@@ -4,12 +4,8 @@ import com.wondealer.dto.request.*;
 import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.MemberResDto;
 import com.wondealer.dto.response.TokenDto;
-import com.wondealer.entity.Member;
-import com.wondealer.exception.CustomException;
-import com.wondealer.repository.MemberRepository;
 import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.AuthService;
-import com.wondealer.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,8 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final MemberRepository memberRepository;
-    private final EmailService emailService;
+
 
     // POST /auth/signup — 회원가입
     @PostMapping("/signup")
