@@ -117,6 +117,7 @@ public class DataInitializer implements CommandLineRunner {
             gameServerRepository.save(GameServer.builder()
                     .game(game)
                     .serverName(name)
+                    .isActive(true)
                     .build());
         }
     }

@@ -1,16 +1,17 @@
 package com.wondealer.repository;
 
 import com.wondealer.entity.Item;
+import com.wondealer.entity.ItemStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ItemRepository extends JpaRepository<Item, Long> {
-
-    // 💡 설계서 스펙 반영: ItemType 대신 GameCategory의 categoryName('아이템'/'게임머니'/'계정') 버튼 필터링 구현
-    // 일반 아이템 거래소 화면용 조회 메서드
+// JpaSpecificationExecutor<Item> 추가이유 페이징만 하려면 JpaRepository로 충분하다.
+//하지만 gameId/categoryId/tradeType/keyword처럼 조건이 선택적으로 붙는 검색 + 페이징을 깔끔하게 하려면 JpaSpecificationExecutor가 좋다.
+public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
     List<Item> findByGameServer_Game_GameNameAndGameServer_ServerNameAndGameCategory_CategoryNameAndStatus(
-            String gameName, String serverName, String categoryName, String status
+            String gameName, String serverName, String categoryName, ItemStatus status
     );
 }
