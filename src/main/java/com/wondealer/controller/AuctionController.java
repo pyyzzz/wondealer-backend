@@ -4,11 +4,13 @@ import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.AuctionDetailResDto;
 import com.wondealer.dto.response.AuctionListResDto;
 import com.wondealer.dto.response.PageResDto;
+import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.AuctionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,5 +39,14 @@ public class AuctionController {
     ) {
         AuctionDetailResDto response = auctionService.getAuctionDetail(auctionId);
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @DeleteMapping("/{auctionId}")
+    public ResponseEntity<ApiResponse<Void>> cancelAuction(
+            @PathVariable Long auctionId
+    ) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        auctionService.cancelAuction(memberId, auctionId);
+        return ResponseEntity.ok(ApiResponse.ok("경매가 취소되었습니다.", null));
     }
 }
