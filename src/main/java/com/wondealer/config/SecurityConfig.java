@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/rankings").permitAll() // 랭킹 모두 확인 가능하게 허용
                         .requestMatchers(HttpMethod.GET, "/api/items/**").permitAll()  // 상품 목록 조회
                         .requestMatchers(HttpMethod.GET, "/api/games/**").permitAll() // 게임 목록 조회
+                        .requestMatchers(HttpMethod.GET, "/api/auctions/**").permitAll() // 비로그인 사용자도 경매를 볼 수 있음
+
                         // 관리자 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // 나머지 전부 인증 필요
