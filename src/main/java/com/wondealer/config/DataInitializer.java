@@ -69,23 +69,25 @@ public class DataInitializer implements CommandLineRunner {
                 .gameName("디아블로4")
                 .build());
         saveCategories(diablo, true);
-        // 서버 없음
+        // 서버 없어도 모든 카테고리 다 열어놓기 (아이템, 게임머니, 계정)
+        // 게임머니 카테고리의 계정이 올라올 수도 있다는 뜻. (아이템매니아도 동일한 방식)
+        // 카테고리까지 게임 별로 구분되게 하기에는 시간 부족.
 
         // ── 리그 오브 레전드 ────────────────────────────────────
         // 아이템/게임머니 거래 불가 → 계정/기타만
         Game lol = gameRepository.save(Game.builder()
                 .gameName("리그 오브 레전드")
                 .build());
-        saveCategories(lol, false);
-        // 서버 없음
+        saveCategories(lol, true);
+
 
         // ── 발로란트 ────────────────────────────────────────────
         // 아이템/게임머니 거래 불가 → 계정/기타만
         Game valorant = gameRepository.save(Game.builder()
                 .gameName("발로란트")
                 .build());
-        saveCategories(valorant, false);
-        // 서버 없음
+        saveCategories(valorant, true);
+
 
         log.info("게임/카테고리/서버 초기 데이터 삽입 완료");
     }
