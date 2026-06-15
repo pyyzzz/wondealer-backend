@@ -8,6 +8,7 @@ import com.wondealer.dto.response.AuctionCreateResDto;
 import com.wondealer.dto.response.ItemCreateResDto;
 import com.wondealer.dto.response.ItemDetailResDto;
 import com.wondealer.dto.response.ItemListResDto;
+import com.wondealer.dto.response.PageResDto;
 import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.ItemService;
 import jakarta.validation.Valid;
@@ -35,7 +36,7 @@ public class ItemController {
     private final ItemService itemService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ItemListResDto>>> getItems(
+    public ResponseEntity<ApiResponse<PageResDto<ItemListResDto>>> getItems(
             @RequestParam(required = false) Long gameId,
             @RequestParam(required = false) Long serverId,
             @RequestParam(required = false) Long categoryId,
@@ -44,7 +45,7 @@ public class ItemController {
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
     ) {
         Page<ItemListResDto> response = itemService.getItems(gameId, serverId, categoryId, tradeType, keyword, pageable);
-        return ResponseEntity.ok(ApiResponse.ok(response));
+        return ResponseEntity.ok(ApiResponse.ok(PageResDto.from(response)));
     }
 
     @PostMapping
