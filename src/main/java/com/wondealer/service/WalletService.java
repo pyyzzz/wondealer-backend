@@ -1,0 +1,127 @@
+package com.wondealer.service;
+
+import com.wondealer.dto.request.WalletChargeCompleteReqDto;
+import com.wondealer.dto.request.WalletChargeReadyReqDto;
+import com.wondealer.dto.response.WalletChargeCompleteResDto;
+import com.wondealer.dto.response.WalletChargeReadyResDto;
+import com.wondealer.entity.Member;
+import com.wondealer.entity.Wallet;
+import com.wondealer.entity.WalletCharge;
+import com.wondealer.entity.WalletTx;
+import com.wondealer.entity.WalletTxType;
+import com.wondealer.exception.CustomException;
+import com.wondealer.repository.MemberRepository;
+import com.wondealer.repository.WalletChargeRepository;
+import com.wondealer.repository.WalletRepository;
+import com.wondealer.repository.WalletTxRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class WalletService {
+
+    private static final String ORDER_NAME = "WonPay 충전";
+    private static final String CURRENCY_KRW = "CURRENCY_KRW";
+    private static final String PORTONE_PAID_STATUS = "PAID";
+
+    private final MemberRepository memberRepository;
+    private final WalletRepository walletRepository;
+    private final WalletTxRepository walletTxRepository;
+    private final WalletChargeRepository walletChargeRepository;
+    private final PortOneService portOneService;
+
+    @Transactional
+    public WalletChargeReadyResDto prepareCharge(Long memberId, WalletChargeReadyReqDto dto) {
+        Member member = findUsableMember(memberId);
+        getOrCreateWallet(member);
+
+        String paymentId = "wonpay-" + memberId + "-" + UUID.randomUUID();
+
+        WalletCharge charge = WalletCharge.builder()
+                .member(member)
+                .paymentId(paymentId)
+                .amount(dto.getAmount())
+                .build();
+        walletChargeRepository.save(charge);
+
+        return WalletChargeReadyResDto.builder()
+                .paymentId(paymentId)
+                .amount(charge.getAmount())
+                .orderName(ORDER_NAME)
+                .currency(CURRENCY_KRW)
+                .build();
+    }
+
+    @Transactional
+    public WalletChargeCompleteResDto completeCharge(Long memberId, WalletChargeCompleteReqDto dto) {
+        WalletCharge charge = walletChargeRepository.findByPaymentId(dto.getPaymentId())
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "충전 요청을 찾을 수 없습니다."));
+
+        if (!charge.getMember().getId().equals(memberId)) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "본인의 충전 요청만 완료할 수 있습니다.");
+        }
+
+        Member member = findUsableMember(memberId);
+        Wallet wallet = getOrCreateWallet(member);
+
+        if (charge.isCompleted()) {
+            return WalletChargeCompleteResDto.builder()
+                    .balance(wallet.getBalance())
+                    .chargedAmount(charge.getAmount())
+                    .build();
+        }
+
+        PortOneService.PortOnePayment payment = portOneService.getPayment(charge.getPaymentId());
+        validatePaidPayment(charge, payment);
+
+        wallet.deposit(charge.getAmount());
+        charge.complete();
+        walletTxRepository.save(WalletTx.builder()
+                .wallet(wallet)
+                .type(WalletTxType.CHARGE)
+                .amount(charge.getAmount())
+                .fee(0L)
+                .tradeId(null)
+                .description(ORDER_NAME)
+                .build());
+
+        return WalletChargeCompleteResDto.builder()
+                .balance(wallet.getBalance())
+                .chargedAmount(charge.getAmount())
+                .build();
+    }
+
+    private Member findUsableMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+
+        if (member.isBanned()) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "정지된 회원은 WonPay를 충전할 수 없습니다.");
+        }
+
+        return member;
+    }
+
+    private Wallet getOrCreateWallet(Member member) {
+        return walletRepository.findByMemberId(member.getId())
+                .orElseGet(() -> walletRepository.save(Wallet.builder()
+                        .member(member)
+                        .build()));
+    }
+
+    private void validatePaidPayment(WalletCharge charge, PortOneService.PortOnePayment payment) {
+        if (!PORTONE_PAID_STATUS.equals(payment.getStatus())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "결제가 완료되지 않았습니다.");
+        }
+
+        if (!charge.getAmount().equals(payment.getTotalAmount())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "결제 금액이 충전 요청 금액과 일치하지 않습니다.");
+        }
+    }
+}
