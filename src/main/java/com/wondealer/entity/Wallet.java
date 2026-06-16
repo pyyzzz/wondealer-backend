@@ -54,8 +54,10 @@ public class Wallet {
     /**
      * 잔액 차감 — 입찰, 결제, 출금 시 사용
      * WalletTxType.USE, WITHDRAW
-     * 경매 입찰 시: 즉시 차감 (방식 A 확정)
-     * outbid 시: deposit()으로 즉시 환불
+     // 우리 설계  (즉시 차감/환불)
+     // 입찰 시: balance 즉시 차감 (withdraw 사용)
+     // outbid 시: balance 즉시 환불 (deposit 사용)
+     // lockFunds 관련 메서드 불필요
      */
     public void withdraw(Long amount) {
         if (amount <= 0) {
