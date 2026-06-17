@@ -1,9 +1,7 @@
 package com.wondealer.config;
 
-import com.wondealer.security.JwtAccessDeniedHandle;
-import com.wondealer.security.JwtAuthenticationEntryPoint;
-import com.wondealer.security.JwtSecurityConfig;
-import com.wondealer.security.TokenProvider;
+import com.wondealer.security.*;
+import com.wondealer.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +25,8 @@ public class SecurityConfig {
     private final TokenProvider tokenProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandle jwtAccessDeniedHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -44,11 +44,21 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)  // 401
                         .accessDeniedHandler(jwtAccessDeniedHandler))           // 403
+                // OAuth2 소셜 로그인 기능 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService) // 우리가 만든 서비스 연결
+                        )
+                        .successHandler(oAuth2SuccessHandler) // 로그인 성공 후 JWT를 발급할 핸들러 (새로 만들어야 함)
+                )
                 .authorizeHttpRequests(auth -> auth
                         // 인증 불필요
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/auth/reissue").permitAll()
+                        .requestMatchers("/login-success").permitAll()
                         .requestMatchers("/api/rankings").permitAll() // 랭킹 모두 확인 가능하게 허용
                         .requestMatchers(HttpMethod.GET, "/api/items/**").permitAll()  // 상품 목록 조회
                         .requestMatchers(HttpMethod.GET, "/api/games/**").permitAll() // 게임 목록 조회
