@@ -99,13 +99,22 @@ public class TradeService {
         return TradeResDto.from(trade);
     }
 
+    /**
+     * 경매 낙찰 정산 처리
+     * 낙찰자(winner)만 호출 가능
+     */
     @Transactional
-    public TradeResDto settleAuction(Long auctionId) {
+    public TradeResDto settleAuction(Long memberId, Long auctionId) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "경매를 찾을 수 없습니다."));
 
         if (!AUCTION_STATUS_ENDED.equals(auction.getStatus()) || auction.getWinner() == null) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "낙찰 완료된 경매만 정산할 수 있습니다.");
+        }
+
+        // 낙찰자 본인만 정산 가능
+        if (!auction.getWinner().getId().equals(memberId)) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "낙찰자만 정산을 요청할 수 있습니다.");
         }
 
         if (tradeRepository.findByItemId(auction.getItem().getId()).isPresent()) {
@@ -148,7 +157,8 @@ public class TradeService {
         Wallet buyerWallet = walletRepository.findByMemberId(buyerId)
                 .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "WonPay 지갑이 없습니다."));
 
-        saveWalletTx(buyerWallet, WalletTxType.USE, trade.getTradePrice(), trade.getId(), "직거래 WonPay 결제", 0L);
+        saveWalletTx(buyerWallet, WalletTxType.USE, trade.getTradePrice(),
+                trade.getId(), "직거래 WonPay 결제", 0L);
         trade.completePayment();
 
         Payment payment = paymentRepository.save(Payment.builder()
@@ -165,12 +175,12 @@ public class TradeService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "포트원 paymentId가 필요합니다.");
         }
 
-        PortOneService.PortOnePayment payment = portOneService.getPayment(paymentId);
-        if (!PORTONE_PAID_STATUS.equals(payment.getStatus())) {
+        PortOneService.PortOnePayment portOnePayment = portOneService.getPayment(paymentId);
+        if (!PORTONE_PAID_STATUS.equals(portOnePayment.getStatus())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "포트원 결제가 완료되지 않았습니다.");
         }
 
-        if (!trade.getTradePrice().equals(payment.getTotalAmount())) {
+        if (!trade.getTradePrice().equals(portOnePayment.getTotalAmount())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "결제 금액이 거래 금액과 일치하지 않습니다.");
         }
 
@@ -201,7 +211,8 @@ public class TradeService {
                 .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "판매자 지갑이 없습니다."));
 
         sellerWallet.deposit(settlementAmount);
-        saveWalletTx(sellerWallet, WalletTxType.SETTLEMENT, settlementAmount, trade.getId(), "거래 판매자 정산", fee);
+        saveWalletTx(sellerWallet, WalletTxType.SETTLEMENT, settlementAmount,
+                trade.getId(), "거래 판매자 정산", fee);
         expireChatRooms(trade);
     }
 
@@ -220,7 +231,8 @@ public class TradeService {
         }
     }
 
-    private void saveWalletTx(Wallet wallet, WalletTxType type, Long amount, Long tradeId, String description, Long fee) {
+    private void saveWalletTx(Wallet wallet, WalletTxType type, Long amount,
+                              Long tradeId, String description, Long fee) {
         walletTxRepository.save(WalletTx.builder()
                 .wallet(wallet)
                 .type(type)

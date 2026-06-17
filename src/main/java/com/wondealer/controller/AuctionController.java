@@ -58,14 +58,16 @@ public class AuctionController {
     ) {
         Long memberId = SecurityUtil.getCurrentMemberId();
         AuctionBidResDto response = bidService.placeBid(auctionId, memberId, dto);
-        return ResponseEntity.ok(ApiResponse.ok("Bid completed.", response));
+        return ResponseEntity.ok(ApiResponse.ok("입찰이 완료되었습니다.", response));
     }
 
+    // 낙찰자만 호출 가능
     @PostMapping("/{auctionId}/settle")
     public ResponseEntity<ApiResponse<TradeResDto>> settleAuction(
             @PathVariable Long auctionId
     ) {
-        TradeResDto response = tradeService.settleAuction(auctionId);
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        TradeResDto response = tradeService.settleAuction(memberId, auctionId);
         return ResponseEntity.ok(ApiResponse.ok("경매 거래가 정산되었습니다.", response));
     }
 
