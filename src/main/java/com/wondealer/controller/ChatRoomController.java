@@ -36,7 +36,7 @@ public class ChatRoomController {
     ) {
         Long memberId = SecurityUtil.getCurrentMemberId();
         ChatRoomCreateResDto response = chatService.createChatRoom(memberId, dto);
-        return ResponseEntity.ok(ApiResponse.ok(response));
+        return ResponseEntity.ok(ApiResponse.ok("채팅방이 생성되었습니다.", response));
     }
 
     @GetMapping
