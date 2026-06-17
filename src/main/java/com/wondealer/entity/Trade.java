@@ -76,7 +76,7 @@ public class Trade {
     }
 
     public void completeTrade() {
-        if (this.status != TradeStatus.COMPLETED) {
+        if (this.status != TradeStatus.PAID) {
             throw new IllegalStateException("결제 완료 상태의 거래만 거래 확정이 가능합니다.");
         }
         this.status = TradeStatus.COMPLETED;
