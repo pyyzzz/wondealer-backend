@@ -1,11 +1,15 @@
 package com.wondealer.controller;
 
+import com.wondealer.dto.request.AuctionBidReqDto;
 import com.wondealer.dto.response.ApiResponse;
+import com.wondealer.dto.response.AuctionBidResDto;
 import com.wondealer.dto.response.AuctionDetailResDto;
 import com.wondealer.dto.response.AuctionListResDto;
 import com.wondealer.dto.response.PageResDto;
 import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.AuctionService;
+import com.wondealer.service.BidService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -13,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuctionController {
 
     private final AuctionService auctionService;
+    private final BidService bidService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResDto<AuctionListResDto>>> getAuctions(
@@ -39,6 +46,16 @@ public class AuctionController {
     ) {
         AuctionDetailResDto response = auctionService.getAuctionDetail(auctionId);
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/{auctionId}/bids")
+    public ResponseEntity<ApiResponse<AuctionBidResDto>> placeBid(
+            @PathVariable Long auctionId,
+            @Valid @RequestBody AuctionBidReqDto dto
+    ) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        AuctionBidResDto response = bidService.placeBid(auctionId, memberId, dto);
+        return ResponseEntity.ok(ApiResponse.ok("Bid completed.", response));
     }
 
     @DeleteMapping("/{auctionId}")
