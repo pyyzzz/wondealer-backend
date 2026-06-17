@@ -21,7 +21,6 @@ public class ChatMessage {
     @JoinColumn(name = "chat_room_id", nullable = false)
     private ChatRoom chatRoom;
 
-    // 메시지 발신자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
     private Member sender;
@@ -29,9 +28,17 @@ public class ChatMessage {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Builder.Default
+    @Column(name = "is_read", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private boolean isRead = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() { this.createdAt = LocalDateTime.now(); }
+
+    public void markAsRead() {
+        this.isRead = true;
+    }
 }
