@@ -1,5 +1,6 @@
 package com.wondealer.service;
 
+import com.wondealer.dto.request.EmailReqDto;
 import com.wondealer.dto.request.LoginReqDto;
 import com.wondealer.dto.request.SignUpReqDto;
 import com.wondealer.dto.response.MemberResDto;
@@ -36,11 +37,19 @@ public class AuthService {
     private final CustomUserDetailsService customUserDetailsService;
     private final EmailVerifyRepository emailVerifyRepository;
     private final EmailService emailService;
-//    private final WalletRepository walletRepository;
+    private final WalletRepository walletRepository;
 
 
     // ── 회원가입 ──────────────────────────────────────────────────
     public MemberResDto signup(SignUpReqDto dto) {
+        // [핵심] 이메일 인증 여부 검증 (회원가입 전 필수 확인!)
+        EmailVerify emailVerify = emailVerifyRepository.findTopByEmailOrderByCreatedAtDesc(dto.getEmail())
+                .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "이메일 인증을 먼저 진행해주세요."));
+
+        if (!emailVerify.isUsed()) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다.");
+        }
+
         // 1-1. 이메일/아이디/닉네임 중복 체크
         if (memberRepository.existsByEmail(dto.getEmail())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "이미 가입된 이메일입니다");
@@ -53,6 +62,7 @@ public class AuthService {
         }
         // 2. Member 엔티티 생성 (아직 DB에 저장되지 않은 상태)
         Member member = dto.toEntity(passwordEncoder);
+        member.verifyEmail();
 
         // 3. 필수 약관 동의 검증
         List<Long> agreedTerms = dto.getTermsAgreed();
@@ -77,13 +87,12 @@ public class AuthService {
             member.agreeToTerms(termsList); // Member 엔티티 내부에서 TermsAgree 생성 및 추가
         }
 
-        // 4. 최종 저장 (CascadeType.ALL 덕분에 member와 termsAgree가 한 번에 저장됨)
+        // 4. 최종 저장
         memberRepository.save(member);
-        emailService.sendVerificationEmail(member);
 
-//        // 5. 회원가입 시 WALLET 자동 생성
-//        Wallet wallet = Wallet.createWallet(member);
-//        walletRepository.save(wallet);
+        // 5. 지갑 생성 (멤버가 저장된 후 멤버 ID를 사용하여 생성)
+        Wallet wallet = Wallet.createWallet(member);
+        walletRepository.save(wallet);
 
         return MemberResDto.of(member);
     }
@@ -127,6 +136,11 @@ public class AuthService {
 
         // 5. TokenDto에 nickname 담아서 반환
         tokenDto.setNickname(member.getNickname());
+
+        // 💡 [백엔드 처리 핵심] 유저의 권한(Authority)을 꺼내서 TokenDto에 함께 담아줍니다!
+        if (member.getAuthority() != null) {
+            tokenDto.setRole(member.getAuthority().name()); // "ADMIN" 또는 "USER"가 담김
+        }
 
         return tokenDto;
     }
@@ -219,15 +233,16 @@ public class AuthService {
         emailService.sendEmail(email, subject, text);
     }
 
-    // ── 사용자가 요청한 이메일 주소가 우리 서비스에
-    // 실제로 존재하는지 확인하고, 존재한다면 인증 프로세스를 시작 ────────────────────────────────────────
+    // ── 회원가입 페이지에서 제일먼저 이메일 인증을 하고
+    // 정보 입력, 약관동의 후 회원가입 완료 ────────────────────────────────────────
     public void sendVerificationEmail(String email) {
-        // 1. 회원 조회 (로직을 서비스로 이동)
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "해당 이메일로 가입된 회원이 없습니다."));
+        // 1. 중복 체크
+        if (memberRepository.existsByEmail(email)) {
+            throw new CustomException(HttpStatus.CONFLICT, "이미 가입된 이메일입니다.");
+        }
 
-        // 2. 이메일 발송 서비스 호출
-        emailService.sendVerificationEmail(member);
+        // 2. 템포러리 멤버 없이 이메일 주소만 깔끔하게 토스!
+        emailService.sendVerificationEmail(email);
     }
 
 
@@ -235,20 +250,18 @@ public class AuthService {
     // ── 사용자가 이메일 인증 링크를 클릭했을 때,
     // 서버가 인증을 완료하고 회원의 가입 상태를 '인증 완료'로 변경 ────────────────────────────────────────
     public void verifyEmail(String token) {
-        // 1. 토큰으로 EMAIL_VERIFY 조회
+        // 1. 토큰으로 조회
         EmailVerify emailVerify = emailVerifyRepository.findByToken(token)
                 .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "유효하지 않은 인증 토큰입니다."));
 
-
-        // 2. 토큰 만료 시간 확인 (현재 시간과 비교)
+        // 2. 만료 시간 확인
         if (emailVerify.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new CustomException(HttpStatus.BAD_REQUEST, "인증 시간이 만료되었습니다. 다시 요청해주세요.");
+            throw new CustomException(HttpStatus.BAD_REQUEST, "인증 시간이 만료되었습니다.");
         }
-        // 3. 사용 여부 검증 및 상태 변경 (엔티티의 책임)
+
+        // 3. 인증 완료 상태로 변경 (이때 Member 연결 없음)
         emailVerify.useToken();
 
-        // 4. 회원 상태 변경 (is_email_verified = true)
-        Member member = emailVerify.getMember();
-        member.verifyEmail();
+        emailVerifyRepository.save(emailVerify);
     }
 }
