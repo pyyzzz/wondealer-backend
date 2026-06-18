@@ -17,6 +17,7 @@ import com.wondealer.repository.WalletChargeRepository;
 import com.wondealer.repository.WalletRepository;
 import com.wondealer.repository.WalletTxRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,9 @@ public class WalletService {
     private static final String CURRENCY_KRW = "CURRENCY_KRW";
     private static final String PORTONE_PAID_STATUS = "PAID";
     private static final String WITHDRAW_PENDING_STATUS = "PENDING";
+
+    @Value("${withdraw.rate:0.01}")
+    private double withdrawRate;
 
     private final MemberRepository memberRepository;
     private final WalletRepository walletRepository;
@@ -100,30 +104,51 @@ public class WalletService {
                 .build();
     }
 
+    /**
+     * WonPay 출금 신청
+     * Member에 등록된 계좌로 자동 출금 (방식 B 확정)
+     * 수수료: withdraw.rate=0.01 (1%)
+     */
     @Transactional
     public WalletWithdrawResDto withdraw(Long memberId, WalletWithdrawReqDto dto) {
-        findUsableMember(memberId);
+        Member member = findUsableMember(memberId);
+
+        // 등록된 계좌 확인
+        if (member.getBankName() == null || member.getAccountNumber() == null) {
+            throw new CustomException(HttpStatus.BAD_REQUEST,
+                    "출금 계좌를 먼저 등록해주세요. (마이페이지 → 계좌 등록)");
+        }
 
         Wallet wallet = walletRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "WonPay 지갑이 없습니다."));
+
+        // 수수료 계산 (1%)
+        long fee = (long) Math.floor(dto.getAmount() * withdrawRate);
+        long actualAmount = dto.getAmount() - fee;
 
         if (wallet.getBalance() < dto.getAmount()) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "잔액이 부족합니다.");
         }
 
         wallet.withdraw(dto.getAmount());
+
         WalletTx walletTx = walletTxRepository.save(WalletTx.builder()
                 .wallet(wallet)
                 .type(WalletTxType.WITHDRAW)
                 .amount(dto.getAmount())
-                .fee(0L)
+                .fee(fee)
                 .tradeId(null)
-                .description("WonPay 출금 신청: " + dto.getBankName() + " " + maskAccountNumber(dto.getAccountNumber()))
+                .description("WonPay 출금: " + member.getBankName()
+                        + " " + maskAccountNumber(member.getAccountNumber()))
                 .build());
 
         return WalletWithdrawResDto.builder()
                 .withdrawId(walletTx.getId())
                 .amount(dto.getAmount())
+                .fee(fee)
+                .actualAmount(actualAmount)
+                .bankName(member.getBankName())
+                .accountNumber(maskAccountNumber(member.getAccountNumber()))
                 .status(WITHDRAW_PENDING_STATUS)
                 .build();
     }
