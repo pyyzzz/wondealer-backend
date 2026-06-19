@@ -16,4 +16,5 @@ public class TokenDto {
     private String refreshToken;        // 7일 만료 — DB 저장
     private Long accessTokenExpiresIn;  // Access Token 만료 시각 (Unix timestamp ms)
     private String nickname;            // 로그인한 회원 닉네임 (프론트 헤더 표시용)
+    private String role;                // 권한
 }
