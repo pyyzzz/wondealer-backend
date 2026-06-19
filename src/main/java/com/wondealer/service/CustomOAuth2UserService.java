@@ -7,7 +7,6 @@ import com.wondealer.repository.MemberRepository;
 import com.wondealer.repository.OauthAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -24,7 +23,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
     private final OauthAccountRepository oauthAccountRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -63,7 +61,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             .name(name)
                             .username(email)
                             .nickname(uniqueNickname)
-                            .password(passwordEncoder.encode("OAUTH_USER"))
+                            .password("OAUTH_" + UUID.randomUUID().toString())
                             .authority(Authority.ROLE_USER)
                             .isEmailVerified(true)
                             .build();
