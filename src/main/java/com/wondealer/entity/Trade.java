@@ -68,13 +68,6 @@ public class Trade {
         this.status = TradeStatus.PAID;
     }
 
-    public void shipItem() {
-        if (this.status != TradeStatus.PAID) {
-            throw new IllegalStateException("결제가 완료된 거래만 물품 인계가 가능합니다.");
-        }
-        this.status = TradeStatus.COMPLETED;
-    }
-
     public void completeTrade() {
         if (this.status != TradeStatus.PAID) {
             throw new IllegalStateException("결제 완료 상태의 거래만 거래 확정이 가능합니다.");
