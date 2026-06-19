@@ -6,12 +6,14 @@ import com.wondealer.dto.request.WalletWithdrawReqDto;
 import com.wondealer.dto.response.ApiResponse;
 import com.wondealer.dto.response.WalletChargeCompleteResDto;
 import com.wondealer.dto.response.WalletChargeReadyResDto;
+import com.wondealer.dto.response.WalletResDto;
 import com.wondealer.dto.response.WalletWithdrawResDto;
 import com.wondealer.security.SecurityUtil;
 import com.wondealer.service.WalletService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +25,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class WalletController {
 
     private final WalletService walletService;
+
+    /**
+     * WonPay 잔액 및 등록 계좌 조회
+     */
+    @GetMapping
+    public ResponseEntity<ApiResponse<WalletResDto>> getWallet() {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+        WalletResDto response = walletService.getWallet(memberId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
 
     @PostMapping("/charges/ready")
     public ResponseEntity<ApiResponse<WalletChargeReadyResDto>> prepareCharge(
@@ -48,6 +60,7 @@ public class WalletController {
     ) {
         Long memberId = SecurityUtil.getCurrentMemberId();
         WalletWithdrawResDto response = walletService.withdraw(memberId, dto);
-        return ResponseEntity.ok(ApiResponse.ok("출금 신청이 완료되었습니다. 영업일 기준 1~3일 내 처리됩니다.", response));
+        return ResponseEntity.ok(ApiResponse.ok(
+                "출금 신청이 완료되었습니다. 영업일 기준 1~3일 내 처리됩니다.", response));
     }
 }

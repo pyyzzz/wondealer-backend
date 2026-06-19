@@ -5,6 +5,7 @@ import com.wondealer.dto.request.WalletChargeReadyReqDto;
 import com.wondealer.dto.request.WalletWithdrawReqDto;
 import com.wondealer.dto.response.WalletChargeCompleteResDto;
 import com.wondealer.dto.response.WalletChargeReadyResDto;
+import com.wondealer.dto.response.WalletResDto;
 import com.wondealer.dto.response.WalletWithdrawResDto;
 import com.wondealer.entity.Member;
 import com.wondealer.entity.Wallet;
@@ -42,6 +43,15 @@ public class WalletService {
     private final WalletTxRepository walletTxRepository;
     private final WalletChargeRepository walletChargeRepository;
     private final PortOneService portOneService;
+
+    /**
+     * WonPay 잔액 및 등록 계좌 조회
+     */
+    public WalletResDto getWallet(Long memberId) {
+        Member member = findUsableMember(memberId);
+        Wallet wallet = getOrCreateWallet(member);
+        return WalletResDto.of(wallet, member);
+    }
 
     @Transactional
     public WalletChargeReadyResDto prepareCharge(Long memberId, WalletChargeReadyReqDto dto) {
@@ -113,7 +123,6 @@ public class WalletService {
     public WalletWithdrawResDto withdraw(Long memberId, WalletWithdrawReqDto dto) {
         Member member = findUsableMember(memberId);
 
-        // 등록된 계좌 확인
         if (member.getBankName() == null || member.getAccountNumber() == null) {
             throw new CustomException(HttpStatus.BAD_REQUEST,
                     "출금 계좌를 먼저 등록해주세요. (마이페이지 → 계좌 등록)");
@@ -122,7 +131,6 @@ public class WalletService {
         Wallet wallet = walletRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "WonPay 지갑이 없습니다."));
 
-        // 수수료 계산 (1%)
         long fee = (long) Math.floor(dto.getAmount() * withdrawRate);
         long actualAmount = dto.getAmount() - fee;
 
