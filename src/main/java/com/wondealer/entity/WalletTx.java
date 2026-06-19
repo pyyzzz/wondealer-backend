@@ -28,7 +28,7 @@ public class WalletTx {
     // (기본값인 ORDINAL을 쓰면 숫자로 저장돼서 나중에 순서 바뀌면 대참사 난다)
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    private WalletTxType type; // CHARGE(충전), PAYMENT(결제), REFUND(환불), WITHDRAW(출금)
+    private WalletTxType type; // CHARGE(충전), USE(결제), REFUND(환불), WITHDRAW(출금), SETTLEMENT(정산)
 
     @Column(name = "amount", nullable = false)
     private Long amount; // 거래 금액
