@@ -131,6 +131,13 @@ public class Member {
         if (phone != null && !phone.isBlank()) this.phone = phone;
     }
 
+
+    public void updateProfileImg(String profileImg) {
+        if (profileImg != null && !profileImg.isBlank()) {
+            this.profileImg = profileImg;
+        }
+    }
+
     // 계좌 정보 수정
     public void updateBankInfo(String bankName, String accountNumber, String accountHolder) {
         this.bankName = bankName;

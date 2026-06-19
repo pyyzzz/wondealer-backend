@@ -16,6 +16,9 @@ import com.wondealer.entity.Member;
 import com.wondealer.entity.TradeType;
 import com.wondealer.exception.CustomException;
 import com.wondealer.repository.AuctionRepository;
+import com.wondealer.entity.ItemImage;
+import com.wondealer.repository.ItemImageRepository;
+import java.util.List;
 import com.wondealer.repository.GameCategoryRepository;
 import com.wondealer.repository.GameServerRepository;
 import com.wondealer.repository.ItemRepository;
@@ -45,6 +48,7 @@ public class ItemService {
     private final GameCategoryRepository gameCategoryRepository;
     private final GameServerRepository gameServerRepository;
     private final AuctionRepository auctionRepository;
+    private final ItemImageRepository itemImageRepository;
 
     /**
      * 상품 목록을 조회한다.
@@ -108,6 +112,9 @@ public class ItemService {
 
         Item savedItem = itemRepository.save(item);
 
+        // 이미지 URL 저장 (Firebase에서 업로드 후 전달된 URL)
+        saveItemImages(savedItem, dto.getImageUrls());
+
         return ItemCreateResDto.from(savedItem);
     }
 
@@ -159,6 +166,9 @@ public class ItemService {
                 .endTime(LocalDateTime.now().plusDays(dto.getAuctionDays()))
                 .build();
 
+        // 이미지 URL 저장 (Firebase에서 업로드 후 전달된 URL)
+        saveItemImages(savedItem, dto.getImageUrls());
+
         Auction savedAuction = auctionRepository.save(auction);
         return AuctionCreateResDto.from(savedAuction);
     }
@@ -197,6 +207,22 @@ public class ItemService {
         validateSelling(item);
 
         item.deleteBySeller();
+    }
+
+
+    /**
+     * 이미지 URL 목록을 ItemImage로 저장한다.
+     * Firebase에서 업로드된 URL을 순서대로 저장하며 첫 번째가 썸네일이 된다.
+     */
+    private void saveItemImages(Item item, List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) return;
+        for (int i = 0; i < imageUrls.size(); i++) {
+            itemImageRepository.save(ItemImage.builder()
+                    .item(item)
+                    .imageUrl(imageUrls.get(i))
+                    .orderNum(i)
+                    .build());
+        }
     }
 
     /**
