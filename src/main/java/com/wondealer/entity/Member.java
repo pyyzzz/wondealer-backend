@@ -39,7 +39,7 @@ public class Member {
     private String password;        // BCrypt 암호화 저장
 
     @Column(length = 500)
-    private String profileImg;      // S3 이미지 URL
+    private String profileImg;      // firebase url
 
     @Column(length = 20)
     private String phone;

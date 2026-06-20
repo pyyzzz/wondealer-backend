@@ -1,10 +1,13 @@
 package com.wondealer.config;
 
+import com.wondealer.constant.Authority;
 import com.wondealer.entity.*;
 import com.wondealer.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,11 +21,52 @@ public class DataInitializer implements CommandLineRunner {
     private final GameRepository gameRepository;
     private final GameCategoryRepository gameCategoryRepository;
     private final GameServerRepository gameServerRepository;
+    private final MemberRepository memberRepository;
+    private final WalletRepository walletRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.username}")
+    private String adminUsername;
+
+    @Value("${admin.email}")
+    private String adminEmail;
+
+    @Value("${admin.password}")
+    private String adminPassword;
+
+    @Value("${admin.name}")
+    private String adminName;
 
     @Override
     public void run(String... args) throws Exception {
+        initAdmin();
         initTerms();
         initGames();
+    }
+
+    // ── 관리자 계정 초기 생성 ─────────────────────────────────────
+    private void initAdmin() {
+        if (memberRepository.existsByEmail(adminEmail)) return;
+
+        Member admin = Member.builder()
+                .email(adminEmail)
+                .username(adminUsername)
+                .password(passwordEncoder.encode(adminPassword))
+                .name(adminName)
+                .nickname("관리자")
+                .authority(Authority.ROLE_ADMIN)
+                .isEmailVerified(true)
+                .isBanned(false)
+                .build();
+
+        memberRepository.save(admin);
+
+        // 관리자도 지갑 생성
+        walletRepository.save(Wallet.builder()
+                .member(admin)
+                .build());
+
+        log.info("관리자 계정 생성 완료 - email: {}", adminEmail);
     }
 
     // ── 약관 초기 데이터 ──────────────────────────────────────────
@@ -54,7 +98,7 @@ public class DataInitializer implements CommandLineRunner {
         Game lostArk = gameRepository.save(Game.builder()
                 .gameName("로스트아크")
                 .build());
-        saveCategories(lostArk, true);  // 아이템/게임머니/계정/기타 전부
+        saveCategories(lostArk, true);
         saveServers(lostArk, List.of("아브렐슈드", "카단", "니나브", "루페온"));
 
         // ── 메이플스토리 ────────────────────────────────────────
@@ -69,34 +113,22 @@ public class DataInitializer implements CommandLineRunner {
                 .gameName("디아블로4")
                 .build());
         saveCategories(diablo, true);
-        // 서버 없어도 모든 카테고리 다 열어놓기 (아이템, 게임머니, 계정)
-        // 게임머니 카테고리의 계정이 올라올 수도 있다는 뜻. (아이템매니아도 동일한 방식)
-        // 카테고리까지 게임 별로 구분되게 하기에는 시간 부족.
 
         // ── 리그 오브 레전드 ────────────────────────────────────
-        // 아이템/게임머니 거래 불가 → 계정/기타만
         Game lol = gameRepository.save(Game.builder()
                 .gameName("리그 오브 레전드")
                 .build());
         saveCategories(lol, true);
 
-
         // ── 발로란트 ────────────────────────────────────────────
-        // 아이템/게임머니 거래 불가 → 계정/기타만
         Game valorant = gameRepository.save(Game.builder()
                 .gameName("발로란트")
                 .build());
         saveCategories(valorant, true);
 
-
         log.info("게임/카테고리/서버 초기 데이터 삽입 완료");
     }
 
-    /**
-     * 게임 카테고리 저장
-     * @param game 대상 게임
-     * @param full true: 아이템/게임머니/계정/기타 / false: 계정/기타만
-     */
     private void saveCategories(Game game, boolean full) {
         if (full) {
             gameCategoryRepository.save(GameCategory.builder().game(game).categoryName("아이템").build());
@@ -106,9 +138,6 @@ public class DataInitializer implements CommandLineRunner {
         gameCategoryRepository.save(GameCategory.builder().game(game).categoryName("기타").build());
     }
 
-    /**
-     * 게임 서버 저장
-     */
     private void saveServers(Game game, List<String> serverNames) {
         for (String name : serverNames) {
             gameServerRepository.save(GameServer.builder()
