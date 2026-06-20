@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// password 필드 없음 — 응답에서 비밀번호 절대 노출 금지
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,15 +15,20 @@ public class MemberResDto {
 
     private Long memberId;
     private String email;
-    private String username;    // 아이디 (로그인 ID)
-    private String name;        // 성함
+    private String username;
+    private String name;
     private String nickname;
     private String profileImg;
     private boolean isEmailVerified;
     private boolean isBanned;
     private Authority authority;
+    private String phone;
 
-    // Entity → DTO 변환 정적 팩토리 메서드
+    // ── WonPay 출금 계좌 정보 ─────────────────────────────────────
+    private String bankName;
+    private String accountNumber;
+    private String accountHolder;
+
     public static MemberResDto of(Member member) {
         return MemberResDto.builder()
                 .memberId(member.getId())
@@ -36,6 +40,10 @@ public class MemberResDto {
                 .isEmailVerified(member.isEmailVerified())
                 .isBanned(member.isBanned())
                 .authority(member.getAuthority())
+                .phone(member.getPhone())
+                .bankName(member.getBankName())
+                .accountNumber(member.getAccountNumber())
+                .accountHolder(member.getAccountHolder())
                 .build();
     }
 }
