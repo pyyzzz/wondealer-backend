@@ -8,11 +8,11 @@ import java.util.List;
 
 @Entity
 @Table(
-    name = "chat_room",
-    uniqueConstraints = {
-        // 같은 구매자가 같은 상품에 채팅방 중복 생성 방지
-        @UniqueConstraint(columnNames = {"buyer_id", "item_id"})
-    }
+        name = "chat_room",
+        uniqueConstraints = {
+                // 같은 구매자가 같은 상품에 채팅방 중복 생성 방지
+                @UniqueConstraint(columnNames = {"buyer_id", "item_id"})
+        }
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -64,6 +64,11 @@ public class ChatRoom {
 
     @PrePersist
     protected void onCreate() { this.createdAt = LocalDateTime.now(); }
+
+    // 결제 완료 시 Trade 연결 (만료 시간 설정 없음)
+    public void assignTrade(Trade trade) {
+        this.trade = trade;
+    }
 
     // 거래 완료 시 Trade 연결 + 만료 시간 7일 설정 (낙찰 채팅방)
     public void connectTradeAndSetExpiry(Trade trade) {

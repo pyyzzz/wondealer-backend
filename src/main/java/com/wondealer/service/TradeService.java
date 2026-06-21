@@ -83,6 +83,11 @@ public class TradeService {
         }
 
         item.reserveItem();
+
+        // 결제 완료 후 채팅방에 Trade 연결 (새로고침 시 결제 상태 유지)
+        chatRoomRepository.findByItemIdAndBuyerId(item.getId(), buyerId)
+                .ifPresent(chatRoom -> chatRoom.assignTrade(trade));
+
         return TradeResDto.from(trade);
     }
 

@@ -16,6 +16,8 @@ public class ChatRoomListResDto {
 
     private Long chatRoomId;
     private Long tradeId;
+    private Long itemId;
+    private Long itemPrice;
     private String itemTitle;
     private String thumbnailImg;
     private ChatRoomCreateResDto.OpponentDto opponent;
@@ -33,6 +35,8 @@ public class ChatRoomListResDto {
         return ChatRoomListResDto.builder()
                 .chatRoomId(chatRoom.getId())
                 .tradeId(chatRoom.getTrade() == null ? null : chatRoom.getTrade().getId())
+                .itemId(chatRoom.getItem().getId())
+                .itemPrice(chatRoom.getItem().getPrice())
                 .itemTitle(chatRoom.getItem().getTitle())
                 .thumbnailImg(findThumbnail(chatRoom))
                 .opponent(ChatRoomCreateResDto.OpponentDto.from(opponent))
