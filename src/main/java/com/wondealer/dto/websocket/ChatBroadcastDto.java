@@ -17,4 +17,6 @@ public class ChatBroadcastDto {
     private String senderNickname;
     private String content;
     private LocalDateTime createdAt;
+    private String messageType;
+    private String tradeStatus;
 }

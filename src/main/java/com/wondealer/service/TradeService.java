@@ -2,7 +2,9 @@ package com.wondealer.service;
 
 import com.wondealer.dto.request.TradeCreateReqDto;
 import com.wondealer.dto.response.TradeResDto;
+import com.wondealer.dto.websocket.ChatBroadcastDto;
 import com.wondealer.entity.Auction;
+import com.wondealer.entity.ChatMessage;
 import com.wondealer.entity.ChatRoom;
 import com.wondealer.entity.Item;
 import com.wondealer.entity.ItemStatus;
@@ -16,6 +18,7 @@ import com.wondealer.entity.WalletTx;
 import com.wondealer.entity.WalletTxType;
 import com.wondealer.exception.CustomException;
 import com.wondealer.repository.AuctionRepository;
+import com.wondealer.repository.ChatMessageRepository;
 import com.wondealer.repository.ChatRoomRepository;
 import com.wondealer.repository.ItemRepository;
 import com.wondealer.repository.MemberRepository;
@@ -26,6 +29,7 @@ import com.wondealer.repository.WalletTxRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +53,8 @@ public class TradeService {
     private final PaymentRepository paymentRepository;
     private final AuctionRepository auctionRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
     private final PortOneService portOneService;
 
     @Value("${trade.rate:0.05}")
@@ -84,9 +90,12 @@ public class TradeService {
 
         item.reserveItem();
 
-        // 결제 완료 후 채팅방에 Trade 연결 (새로고침 시 결제 상태 유지)
+        // 결제 완료 후 채팅방에 Trade 연결 + WebSocket 브로드캐스트
         chatRoomRepository.findByItemIdAndBuyerId(item.getId(), buyerId)
-                .ifPresent(chatRoom -> chatRoom.assignTrade(trade));
+                .ifPresent(chatRoom -> {
+                    chatRoom.assignTrade(trade);
+                    broadcastPaymentComplete(trade, chatRoom);
+                });
 
         return TradeResDto.from(trade);
     }
@@ -117,7 +126,6 @@ public class TradeService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "낙찰 완료된 경매만 정산할 수 있습니다.");
         }
 
-        // 낙찰자 본인만 정산 가능
         if (!auction.getWinner().getId().equals(memberId)) {
             throw new CustomException(HttpStatus.FORBIDDEN, "낙찰자만 정산을 요청할 수 있습니다.");
         }
@@ -219,6 +227,30 @@ public class TradeService {
         saveWalletTx(sellerWallet, WalletTxType.SETTLEMENT, settlementAmount,
                 trade.getId(), "거래 판매자 정산", fee);
         expireChatRooms(trade);
+    }
+
+    /**
+     * 결제 완료 시 SYSTEM 메시지 저장 + WebSocket 브로드캐스트
+     * 구매자/판매자 양쪽 브라우저에 실시간으로 전달
+     */
+    private void broadcastPaymentComplete(Trade trade, ChatRoom chatRoom) {
+        ChatMessage saved = chatMessageRepository.save(
+                ChatMessage.builder()
+                        .chatRoom(chatRoom)
+                        .content("결제가 완료되었습니다. 아이템을 전달해 주세요.")
+                        .messageType("SYSTEM")
+                        .build()
+        );
+        messagingTemplate.convertAndSend(
+                "/topic/chat/" + chatRoom.getId(),
+                ChatBroadcastDto.builder()
+                        .chatRoomId(chatRoom.getId())
+                        .messageType("SYSTEM")
+                        .tradeStatus("PAID")
+                        .content("결제가 완료되었습니다. 아이템을 전달해 주세요.")
+                        .createdAt(saved.getCreatedAt())
+                        .build()
+        );
     }
 
     private long calculateFee(Long tradePrice) {

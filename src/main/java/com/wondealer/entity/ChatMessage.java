@@ -22,11 +22,15 @@ public class ChatMessage {
     private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = true)
     private Member sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Builder.Default
+    @Column(name = "message_type", nullable = false, length = 20)
+    private String messageType = "CHAT";
 
     @Builder.Default
     @Column(name = "is_read", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
