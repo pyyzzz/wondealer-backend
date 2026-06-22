@@ -174,6 +174,8 @@ public class BidService {
                         .bidCount(auction.getBidCount())
                         .bidderId(bidder.getId())
                         .bidderNickname(bidder.getNickname())
+                        .status(auction.getStatus())
+                        .winnerId(auction.getWinner() == null ? null : auction.getWinner().getId())
                         .build()
         );
     }

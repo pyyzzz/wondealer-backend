@@ -17,4 +17,6 @@ public class AuctionBidBroadcastDto {
     private Integer bidCount;
     private Long bidderId;
     private String bidderNickname;
+    private String status;
+    private Long winnerId;
 }
